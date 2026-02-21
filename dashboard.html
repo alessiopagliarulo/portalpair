@@ -5,11 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Portal Pair — Coach Dashboard</title>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/dashboard.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="dashboard-page">
   <header class="header">
     <div class="header-inner">
       <a href="index.html" class="logo"><img src="images/mascot.svg" alt="" class="mascot">Portal<span>Pair</span></a>
@@ -20,62 +21,28 @@
     </div>
   </header>
 
-  <main>
-    <section class="hero">
-      <h1>Find Players Beyond the Box Score</h1>
-      <p>Describe what you're looking for — position, stats, school size. Powered by Actian VectorAI + Sphinx.</p>
-      
-      <div class="search-box">
-        <input type="text" id="searchInput" placeholder="Search players by name..." autocomplete="off">
-        <select id="positionFilter">
-          <option value="">All positions</option>
-          <option value="QB">QB</option>
-          <option value="RB">RB</option>
-          <option value="WR">WR</option>
-          <option value="TE">TE</option>
-          <option value="OL">OL</option>
-          <option value="DL">DL</option>
-          <option value="LB">LB</option>
-          <option value="DB">DB</option>
-          <option value="K">K</option>
-          <option value="P">P</option>
-        </select>
-        <input type="number" id="yearFilter" placeholder="Year" value="2024" min="2015" max="2026">
-        <button id="searchBtn" class="btn btn-primary">Search</button>
+  <main class="dashboard-main">
+    <section class="chat-top">
+      <p class="chat-prompt">Describe the player you want — position, play style, program fit. Type it in your own words.</p>
+      <div class="chat-bar">
+        <input type="text" id="chatInput" placeholder="e.g. Fast RB, smaller program, high YPC..." autofocus>
+        <button id="chatSend" class="btn btn-primary">Find</button>
       </div>
+      <div id="chatMessages" class="chat-messages-mini"></div>
     </section>
 
-    <section class="results-section">
-      <div id="resultsHeader" class="results-header hidden">
-        <h2>Player Results</h2>
-        <p id="resultsCount"></p>
-      </div>
-      <div id="resultsGrid" class="results-grid"></div>
-      <div id="loading" class="loading hidden">Loading players...</div>
-      <div id="emptyState" class="empty-state">
-        <img src="images/mascot.svg" alt="" class="empty-icon mascot-inline">
-        <p>Search for players or ask the Coach Assistant below what you're looking for.</p>
-      </div>
-      <div id="errorState" class="error-state hidden"></div>
-    </section>
-
-    <section class="coach-section">
-      <div class="coach-panel">
-        <h2>Coach Assistant</h2>
-        <p>Describe what you want — RAG over player profiles via Actian VectorAI. Sphinx analyzes player fit.</p>
-        <div class="chat-area">
-          <div id="chatMessages" class="chat-messages"></div>
-          <div class="chat-input-row">
-            <input type="text" id="chatInput" placeholder="e.g. Fast RB from a smaller program, high yards per carry...">
-            <button id="chatSend" class="btn btn-primary">Ask</button>
-          </div>
-        </div>
+    <section class="matches-section">
+      <h2 class="matches-title">Your matches</h2>
+      <div id="matchesGrid" class="matches-grid hidden"></div>
+      <div id="matchesEmpty" class="matches-empty">
+        <span class="matches-empty-icon">★</span>
+        <p>No matches yet. Use the search above to describe the player you're looking for.</p>
       </div>
     </section>
   </main>
 
-  <footer class="footer">
-    <p>Portal Pair — College Football Data API · Actian VectorAI · Sphinx</p>
+  <footer class="footer footer-minimal">
+    <p>Portal Pair · Gemini + VectorAI · College Football Data API</p>
   </footer>
 
   <script src="js/auth.js"></script>
