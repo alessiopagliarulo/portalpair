@@ -1,70 +1,81 @@
-// Landing page - Login / Sign up buttons
 document.addEventListener('DOMContentLoaded', async () => {
-  await initAuth0();
-
-  // If already logged in, redirect to dashboard
-  if (auth0 && (await isAuthenticated())) {
+  const user = await checkAuth();
+  if (user?.email) {
     window.location.href = 'dashboard.html';
     return;
   }
 
-  document.getElementById('loginBtn').addEventListener('click', async () => {
-    if (!auth0) {
-      const cfg = window.AUTH0_CONFIG || {};
-      const msg = (!cfg.domain || !cfg.clientId) 
-        ? 'Auth0 not configured. Add domain and clientId in js/config.js'
-        : 'Auth0 SDK failed to load. Try hard refresh (Ctrl+Shift+R) or check the browser console.';
-      alert(msg);
-      return;
-    }
-    await loginOnly();
-  });
-  document.getElementById('signupBtn').addEventListener('click', async () => {
-    if (!auth0) {
-      const cfg = window.AUTH0_CONFIG || {};
-      const msg = (!cfg.domain || !cfg.clientId) 
-        ? 'Auth0 not configured. Add domain and clientId in js/config.js'
-        : 'Auth0 SDK failed to load. Try hard refresh (Ctrl+Shift+R) or check the browser console.';
-      alert(msg);
-      return;
-    }
-    await login();
-  });
-  document.getElementById('heroSignup').addEventListener('click', handleSignup);
-  const finalSignup = document.getElementById('finalSignup');
-  if (finalSignup) finalSignup.addEventListener('click', handleSignup);
+  const stepEmail = document.getElementById('stepEmail');
+  const stepCode = document.getElementById('stepCode');
+  const emailInput = document.getElementById('emailInput');
+  const codeInput = document.getElementById('codeInput');
+  const emailError = document.getElementById('emailError');
+  const codeError = document.getElementById('codeError');
+  const emailDisplay = document.getElementById('emailDisplay');
+  const sendCodeBtn = document.getElementById('sendCodeBtn');
+  const verifyBtn = document.getElementById('verifyBtn');
 
-  async function handleSignup() {
-    if (!auth0) {
-      const cfg = window.AUTH0_CONFIG || {};
-      const msg = (!cfg.domain || !cfg.clientId) 
-        ? 'Auth0 not configured. Add domain and clientId in js/config.js'
-        : 'Auth0 SDK failed to load. Try hard refresh (Ctrl+Shift+R) or check the browser console.';
-      alert(msg);
-      return;
-    }
-    await login();
+  function showEmailError(msg) {
+    emailError.textContent = msg || '';
+    emailError.classList.toggle('hidden', !msg);
+    emailInput?.classList.toggle('invalid', !!msg);
+  }
+  function showCodeError(msg) {
+    codeError.textContent = msg || '';
+    codeError.classList.toggle('hidden', !msg);
+    codeInput?.classList.toggle('invalid', !!msg);
+  }
+  function isEdu(email) {
+    const d = (email || '').trim().toLowerCase().split('@')[1] || '';
+    return d.endsWith('.edu');
   }
 
-  // Show demo link when Auth0 not configured
-  const config = window.AUTH0_CONFIG || {};
-  if (!config.domain || config.domain.includes('YOUR_')) {
-    document.getElementById('demoLink').classList.remove('hidden');
-  }
-
-  // Scroll reveal for sections — animate every time you scroll to them
-  const observer = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      e.target.classList.toggle('revealed', e.isIntersecting);
-    });
-  }, { threshold: 0.15 });
-  document.querySelectorAll('.how-step, .story-content, .cta-inner').forEach(el => {
-    el.style.opacity = '0';
-    el.style.transform = 'translateY(20px)';
-    el.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
-    observer.observe(el);
+  sendCodeBtn?.addEventListener('click', async () => {
+    showEmailError('');
+    const email = emailInput?.value?.trim();
+    if (!email || !email.includes('@')) {
+      showEmailError('Please enter a valid email.');
+      return;
+    }
+    if (!isEdu(email)) {
+      showEmailError('Only .edu email addresses are accepted.');
+      return;
+    }
+    sendCodeBtn.disabled = true;
+    try {
+      await sendCode(email);
+      emailDisplay.textContent = email;
+      stepEmail.classList.add('hidden');
+      stepCode.classList.remove('hidden');
+      codeInput.value = '';
+      codeInput.focus();
+    } catch (err) {
+      showEmailError(err.message || 'Failed to send code.');
+    } finally {
+      sendCodeBtn.disabled = false;
+    }
   });
-  const revealedStyle = document.createElement('style');
-  revealedStyle.textContent = '.revealed { opacity: 1 !important; transform: translateY(0) !important; }';
-  document.head.appendChild(revealedStyle);
+
+  verifyBtn?.addEventListener('click', async () => {
+    showCodeError('');
+    const email = emailInput?.value?.trim();
+    const code = codeInput?.value?.trim();
+    if (!code) {
+      showCodeError('Enter the verification code.');
+      return;
+    }
+    verifyBtn.disabled = true;
+    try {
+      const data = await verifyCode(email, code);
+      window.location.href = data.redirect || 'dashboard.html';
+    } catch (err) {
+      showCodeError(err.message || 'Invalid code. Try again.');
+    } finally {
+      verifyBtn.disabled = false;
+    }
+  });
+
+  codeInput?.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') verifyBtn?.click();
+  });
 });

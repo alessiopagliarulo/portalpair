@@ -463,6 +463,80 @@ body {
   color: var(--text-muted);
   line-height: 1.6;
 }
+.landing-main {
+  min-height: calc(100vh - 220px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 3rem 2rem;
+}
+.landing-title {
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  margin-bottom: 0.75rem;
+}
+.landing-subtitle {
+  font-size: 1.2rem;
+  color: var(--text-muted);
+  max-width: 520px;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+.landing-email-form {
+  width: 100%;
+  max-width: 440px;
+  margin-bottom: 1rem;
+}
+.landing-email-form input[type="email"],
+.landing-email-form input[type="text"] {
+  width: 100%;
+  padding: 0.9rem 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 1rem;
+  font-family: inherit;
+  margin-bottom: 0.75rem;
+}
+.landing-email-form input[type="email"]:focus,
+.landing-email-form input[type="text"]:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(45, 106, 45, 0.2);
+}
+.landing-email-form input.invalid {
+  border-color: var(--danger);
+}
+.email-error {
+  font-size: 0.9rem;
+  color: var(--danger);
+  margin-bottom: 0.5rem;
+}
+.code-sent-msg {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  margin-bottom: 1rem;
+}
+.landing-cta-buttons {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.landing-cta { margin-bottom: 1rem; }
+.btn-lg { padding: 0.9rem 1.75rem; font-size: 1rem; }
+.landing-note {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+.landing-demo { margin-top: 1.5rem; }
+.landing-demo a { color: var(--accent); text-decoration: none; }
+.landing-demo a:hover { text-decoration: underline; }
 
 /* CTA section */
 .cta-section {
