@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Indiana University block IU mark - cream & crimson -->
+  <rect width="100" height="100" fill="#990000"/>
+  <rect x="15" y="15" width="70" height="70" fill="#FFF8DC"/>
+  <text x="50" y="68" font-family="Georgia, serif" font-size="48" font-weight="bold" fill="#990000" text-anchor="middle">IU</text>
+</svg>

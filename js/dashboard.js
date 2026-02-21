@@ -113,7 +113,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     resultsHeader.classList.add('hidden');
     emptyState.classList.add('hidden');
     errorState.classList.add('hidden');
-    emptyState.innerHTML = '<span class="empty-icon">🏈</span><p>Search for players or ask the Coach Assistant.</p>';
+    emptyState.innerHTML = '<img src="images/mascot.svg" alt="" class="empty-icon mascot-inline"><p>Search for players or ask the Coach Assistant.</p>';
   }
 
   async function sendCoachMessage() {

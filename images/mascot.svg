@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <!-- Yellow star body -->
+  <path fill="#FFD54F" stroke="#F9A825" stroke-width="1.5" d="M50 5 L61 38 L96 38 L68 60 L79 93 L50 72 L21 93 L32 60 L4 38 L39 38 Z"/>
+  <!-- Cute face -->
+  <circle cx="36" cy="42" r="5" fill="#5D4037"/>
+  <circle cx="64" cy="42" r="5" fill="#5D4037"/>
+  <circle cx="38" cy="40" r="2" fill="white"/>
+  <circle cx="66" cy="40" r="2" fill="white"/>
+  <path d="M35 58 Q50 70 65 58" stroke="#5D4037" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <!-- Rosy cheeks -->
+  <ellipse cx="28" cy="52" rx="6" ry="4" fill="#FFAB91" opacity="0.6"/>
+  <ellipse cx="72" cy="52" rx="6" ry="4" fill="#FFAB91" opacity="0.6"/>
+  <!-- American football - ~11:6.7 proportions, saddle brown -->
+  <g transform="translate(68, 78) rotate(-15)">
+    <path d="M-14 0 Q0 -8.5 14 0 Q0 8.5 -14 0 Z" 
+          fill="#8B4513" stroke="#5D3A1A" stroke-width="1"/>
+  </g>
+</svg>
