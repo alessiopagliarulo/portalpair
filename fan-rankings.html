@@ -72,20 +72,63 @@
         });
       }
 
+      function parseCsvFallback(text) {
+        var lines = text.trim().split('\n');
+        if (lines.length < 2) return [];
+        var out = [];
+        for (var i = 1; i < lines.length; i++) {
+          var line = lines[i];
+          var firstComma = line.indexOf(',');
+          var secondComma = line.indexOf(',', firstComma + 1);
+          if (firstComma === -1 || secondComma === -1) continue;
+          var rank = parseInt(line.slice(0, firstComma), 10);
+          var name = line.slice(firstComma + 1, secondComma).trim();
+          var stats = line.slice(secondComma + 1).trim();
+          if (stats.startsWith('"') && stats.endsWith('"')) stats = stats.slice(1, -1);
+          out.push({ rank: isNaN(rank) ? i : rank, name: name, stats: stats });
+        }
+        out.sort(function (a, b) { return a.rank - b.rank; });
+        return out;
+      }
+
       loading.style.display = 'block';
       fetch('/api/rankings')
-        .then(function (r) { return r.json(); })
+        .then(function (r) { return r.ok ? r.json() : []; })
         .then(function (data) {
-          loading.style.display = 'none';
           if (Array.isArray(data) && data.length > 0) {
+            loading.style.display = 'none';
             render(data);
-          } else {
-            countEl.textContent = 'No rankings loaded.';
+            return;
           }
+          return fetch('data/espn_cfb_top100_players_2025_season.csv')
+            .then(function (r) { return r.text(); })
+            .then(function (text) {
+              var parsed = parseCsvFallback(text);
+              loading.style.display = 'none';
+              if (parsed.length > 0) {
+                render(parsed);
+              } else {
+                countEl.textContent = 'No rankings loaded.';
+              }
+            });
         })
+        .then(function () { if (loading.style.display !== 'none') loading.style.display = 'none'; })
         .catch(function () {
-          loading.style.display = 'none';
-          countEl.textContent = 'Could not load rankings.';
+          fetch('data/espn_cfb_top100_players_2025_season.csv')
+            .then(function (r) { return r.ok ? r.text() : ''; })
+            .then(function (text) {
+              loading.style.display = 'none';
+              var parsed = text ? parseCsvFallback(text) : [];
+              if (parsed.length > 0) {
+                render(parsed);
+              } else {
+                countEl.textContent = 'Rankings cannot be loaded. Start the server with: node server.js';
+              }
+            })
+            .catch(function () {
+              loading.style.display = 'none';
+              countEl.textContent = 'Rankings cannot be loaded. Start the server with: node server.js';
+            });
         });
     })();
   </script>
