@@ -238,6 +238,38 @@ app.get('/api/player/portal', async (req, res) => {
   }
 });
 
+// ESPN Top 100 rankings (CSV) — 1 = best, sorted ascending
+const RANKINGS_CSV = path.join(__dirname, 'data', 'espn_cfb_top100_players_2025_season.csv');
+function parseRankingsCsv(content) {
+  const lines = content.trim().split('\n');
+  if (lines.length < 2) return [];
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    const firstComma = line.indexOf(',');
+    const secondComma = line.indexOf(',', firstComma + 1);
+    if (firstComma === -1 || secondComma === -1) continue;
+    const rank = parseInt(line.slice(0, firstComma), 10);
+    const name = line.slice(firstComma + 1, secondComma).trim();
+    let stats = line.slice(secondComma + 1).trim();
+    if (stats.startsWith('"') && stats.endsWith('"')) stats = stats.slice(1, -1);
+    rows.push({ rank: isNaN(rank) ? i : rank, name, stats });
+  }
+  rows.sort((a, b) => a.rank - b.rank); // 1 first
+  return rows;
+}
+app.get('/api/rankings', (req, res) => {
+  try {
+    if (!fs.existsSync(RANKINGS_CSV)) return res.json([]);
+    const content = fs.readFileSync(RANKINGS_CSV, 'utf8');
+    const data = parseRankingsCsv(content);
+    res.json(data);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Mock coach suggestions (placeholder for Actian VectorAI + RAG)
 app.post('/api/coach/suggest', async (req, res) => {
   const { query } = req.body || {};
