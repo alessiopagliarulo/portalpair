@@ -4,14 +4,14 @@
     {
       "label": "Start server",
       "type": "shell",
-      "command": "npx serve -l 8080",
+      "command": "node server.js",
       "isBackground": true,
       "problemMatcher": {
         "pattern": { "regexp": "^(.*)$" },
         "background": {
           "activeOnStart": true,
           "beginsPattern": ".",
-          "endsPattern": "localhost:8080"
+          "endsPattern": "ScoutBase running"
         }
       },
       "presentation": { "reveal": "silent" }

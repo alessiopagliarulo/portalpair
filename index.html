@@ -3,8 +3,40 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hackalytics 2026</title>
+  <title>Portal Pair — Connect Coaches & Players</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
 </head>
-<body>
+<body class="landing">
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo">Portal<span>Pair</span></a>
+      <nav class="nav-auth">
+        <button id="loginBtn" class="btn btn-ghost">Log in</button>
+        <button id="signupBtn" class="btn btn-primary">Sign up</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="landing-main">
+    <h1 class="landing-title">Portal Pair</h1>
+    <p class="landing-subtitle">The holistic player database for college football coaches. University-verified. One score. Full picture.</p>
+    <div class="landing-cta">
+      <button id="heroSignup" class="btn btn-primary btn-lg">Get started — Sign up with university email</button>
+    </div>
+    <p class="landing-note">Coaches sign up with university-issued emails. Auth0 sends a confirmation link to verify your identity.</p>
+    <p id="demoLink" class="landing-demo hidden"><a href="dashboard.html">Continue to dashboard (demo mode)</a></p>
+  </main>
+
+  <footer class="footer">
+    <p>Portal Pair — Hackalytics 2026 · Auth0 · Actian VectorAI · Sphinx</p>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.2.4/auth0-spa-js.production.min.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/landing.js"></script>
 </body>
 </html>
