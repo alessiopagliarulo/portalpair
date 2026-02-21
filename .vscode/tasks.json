@@ -1,0 +1,20 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start server",
+      "type": "shell",
+      "command": "npx serve -l 8080",
+      "isBackground": true,
+      "problemMatcher": {
+        "pattern": { "regexp": "^(.*)$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".",
+          "endsPattern": "localhost:8080"
+        }
+      },
+      "presentation": { "reveal": "silent" }
+    }
+  ]
+}
