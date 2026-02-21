@@ -1,5 +1,10 @@
 document.addEventListener('DOMContentLoaded', async () => {
-  const user = await checkAuth();
+  let user = null;
+  try {
+    user = await checkAuth();
+  } catch (_) {
+    // Server may not be running; continue so bypass can be tried
+  }
   if (user?.email) {
     window.location.href = 'dashboard.html';
     return;
@@ -14,6 +19,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   const emailDisplay = document.getElementById('emailDisplay');
   const sendCodeBtn = document.getElementById('sendCodeBtn');
   const verifyBtn = document.getElementById('verifyBtn');
+  const bypassBtn = document.getElementById('bypassBtn');
+  const bypassEmailBtn = document.getElementById('bypassEmailBtn');
 
   function showEmailError(msg) {
     emailError.textContent = msg || '';
@@ -78,4 +85,20 @@ document.addEventListener('DOMContentLoaded', async () => {
   codeInput?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') verifyBtn?.click();
   });
+
+  function doBypass() {
+    sessionStorage.setItem('testBypass', '1');
+    window.location.href = 'dashboard.html';
+  }
+
+  bypassEmailBtn?.addEventListener('click', () => {
+    const email = emailInput?.value?.trim();
+    if (email && !isEdu(email)) {
+      showEmailError('Only .edu emails accepted. Use test@university.edu for bypass.');
+      return;
+    }
+    doBypass();
+  });
+
+  bypassBtn?.addEventListener('click', doBypass);
 });

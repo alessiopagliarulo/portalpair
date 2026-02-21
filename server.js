@@ -138,6 +138,21 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
+// Testing bypass — skips Auth0 verification (dev only)
+app.post('/api/auth/bypass', (req, res) => {
+  const email = (req.body?.email || 'test@bypass.edu').trim().toLowerCase();
+  const addr = email && email.includes('@') ? email : 'test@bypass.edu';
+  saveLogin(addr);
+  res.cookie('user', addr, {
+    signed: true,
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000
+  });
+  res.json({ success: true, redirect: '/dashboard.html' });
+});
+
 // Proxy to College Football Data API
 app.get('/api/player/search', async (req, res) => {
   try {

@@ -25,14 +25,20 @@
     <div id="stepEmail" class="landing-email-form">
       <input type="email" id="emailInput" placeholder="you@university.edu" autocomplete="email" />
       <p id="emailError" class="email-error hidden"></p>
-      <button type="button" id="sendCodeBtn" class="btn btn-primary btn-lg">Send verification code</button>
+      <div class="verify-row">
+        <button type="button" id="sendCodeBtn" class="btn btn-primary btn-lg">Send verification code</button>
+        <button type="button" id="bypassEmailBtn" class="btn btn-ghost btn-lg">Bypass (testing)</button>
+      </div>
     </div>
 
     <div id="stepCode" class="landing-email-form hidden">
       <p class="code-sent-msg">Check your inbox for the code sent to <strong id="emailDisplay"></strong></p>
       <input type="text" id="codeInput" placeholder="Enter 6-digit code" maxlength="8" autocomplete="one-time-code" />
       <p id="codeError" class="email-error hidden"></p>
-      <button type="button" id="verifyBtn" class="btn btn-primary btn-lg">Verify & sign in</button>
+      <div class="verify-row">
+        <button type="button" id="verifyBtn" class="btn btn-primary btn-lg">Verify & sign in</button>
+        <button type="button" id="bypassBtn" class="btn btn-ghost btn-lg">Bypass (testing)</button>
+      </div>
     </div>
 
     <p class="landing-note">Only .edu emails accepted. Auth0 2FA via email code.</p>

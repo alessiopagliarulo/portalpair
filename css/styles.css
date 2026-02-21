@@ -529,6 +529,13 @@ body {
   color: var(--text-muted);
   margin-bottom: 1rem;
 }
+.verify-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
 .landing-cta-buttons {
   display: flex;
   gap: 0.75rem;

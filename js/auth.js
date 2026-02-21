@@ -31,7 +31,8 @@ async function checkAuth() {
 }
 
 async function logout() {
-  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  sessionStorage.removeItem('testBypass');
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' }).catch(() => {});
   window.location.href = 'index.html';
 }
 
