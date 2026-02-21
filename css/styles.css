@@ -137,6 +137,8 @@ body {
   border-radius: var(--radius);
   cursor: pointer;
   transition: all 0.2s;
+  display: inline-block;
+  text-decoration: none;
 }
 
 .btn-primary {

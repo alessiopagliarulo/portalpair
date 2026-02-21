@@ -3,38 +3,37 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal Pair — Sign In</title>
+  <title>Portal Pair — College Football Recruiting</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-  <meta name="description" content="Portal Pair — College football recruiting platform. Sign in with .edu email.">
+  <meta name="description" content="Portal Pair — College football recruiting platform. Find overlooked talent with opponent-adjusted stats.">
 </head>
 <body class="landing">
   <header class="header">
     <div class="header-inner">
       <a href="index.html" class="logo"><img src="images/mascot.svg" alt="" class="mascot">Portal<span>Pair</span></a>
+      <nav class="nav-auth">
+        <a href="login.html" class="btn btn-primary">Login / Sign up</a>
+      </nav>
     </div>
   </header>
 
-  <main class="landing-main">
-    <h1 class="landing-title">Portal Pair</h1>
-    <p class="landing-subtitle">Sign in with your .edu email. We'll send you a verification code.</p>
-
-    <div id="stepEmail" class="landing-email-form">
-      <input type="email" id="emailInput" placeholder="you@gatech.edu" autocomplete="email" />
-      <p id="emailError" class="email-error hidden"></p>
-      <button type="button" id="sendCodeBtn" class="btn btn-primary btn-lg">Send verification code</button>
+  <main class="landing-hero">
+    <div class="hero-bg">
+      <div class="hero-gradient"></div>
+      <div class="hero-field-lines"></div>
     </div>
-
-    <div id="stepCode" class="landing-email-form hidden">
-      <p class="code-sent-msg">Check your inbox for the code sent to <strong id="emailDisplay"></strong></p>
-      <input type="text" id="codeInput" placeholder="Enter 6-digit code" maxlength="8" autocomplete="one-time-code" />
-      <p id="codeError" class="email-error hidden"></p>
-      <button type="button" id="verifyBtn" class="btn btn-primary btn-lg">Verify & sign in</button>
+    <div class="hero-content">
+      <img src="images/mascot.svg" alt="Portal Pair mascot" class="mascot mascot-lg">
+      <h1 class="hero-headline">Portal <span class="hero-accent">Pair</span></h1>
+      <p class="hero-subhead">Find your star</p>
+      <div class="hero-ctas">
+        <a href="login.html" class="btn btn-primary btn-lg">Get Started</a>
+        <a href="#how-it-works" class="btn btn-ghost btn-lg">How It Works</a>
+      </div>
     </div>
-
-    <p class="landing-note">Only .edu emails accepted. Auth0 2FA via email code.</p>
   </main>
 
   <section class="story-section">
@@ -74,7 +73,8 @@
   <section class="cta-section">
     <div class="cta-inner">
       <h2>Ready to Find Your Star?</h2>
-      <p>Sign up with your university .edu email above to get started.</p>
+      <p>Sign up with your university .edu email. No commitment — just better recruiting data.</p>
+      <a href="login.html" class="btn btn-primary btn-lg">Start Free — Coach Sign Up</a>
     </div>
   </section>
 
@@ -83,6 +83,6 @@
   </footer>
 
   <script src="js/auth.js"></script>
-  <script src="js/landing.js"></script>
+  <script src="js/homepage.js"></script>
 </body>
 </html>
