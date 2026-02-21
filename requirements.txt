@@ -8,9 +8,4 @@ actiancortex @ https://github.com/hackmamba-io/actian-vectorAI-db-beta/raw/main/
 
 # ChromaDB - local backup when Actian VectorAI is unavailable
 chromadb>=0.4.0
-
-# LLM for coach chatbot
-cerebras-cloud-sdk>=1.0.0
-openai>=1.0.0
-google-generativeai>=0.8.0
 pydantic-settings>=2.0.0  # required for ChromaDB on Python 3.14+

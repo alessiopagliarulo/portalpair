@@ -33,25 +33,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     players.forEach((p) => {
       const card = document.createElement('div');
       card.className = 'player-card';
-      const pct = p.matchPct != null ? Math.min(100, Math.max(0, p.matchPct)) : null;
+      const matchPct = p.matchPct != null ? `${p.matchPct}% match` : '';
       const heightStr = p.height ? `${Math.floor(p.height / 12)}'${p.height % 12}"` : '—';
       const weightStr = p.weight ? `${p.weight} lbs` : '—';
-      const circleHtml = pct != null
-        ? `<div class="match-circle" style="--pct: ${pct}">
-            <div class="match-circle-inner"><span>${pct}%</span></div>
-          </div>`
-        : '';
       card.innerHTML = `
-        <div class="player-card-content">
-          <h3>${escapeHtml(p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim())}</h3>
-          <div class="meta">
-            ${p.team ? `<span>${escapeHtml(p.team)}</span>` : ''}
-            ${p.position ? `<span>${escapeHtml(p.position)}</span>` : ''}
-            <span>Ht: ${heightStr}</span>
-            <span>Wt: ${weightStr}</span>
-          </div>
+        <h3>${escapeHtml(p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim())}</h3>
+        <div class="meta">
+          ${p.team ? `<span>${escapeHtml(p.team)}</span>` : ''}
+          ${p.position ? `<span>${escapeHtml(p.position)}</span>` : ''}
+          <span>Ht: ${heightStr}</span>
+          <span>Wt: ${weightStr}</span>
         </div>
-        ${circleHtml}
+        ${matchPct ? `<div class="match-pct">${matchPct}</div>` : ''}
       `;
       matchesGrid.appendChild(card);
     });

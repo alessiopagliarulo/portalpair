@@ -30,26 +30,10 @@ def get_existing_athlete_ids(store) -> set:
         coll = store._client.get_collection(COLLECTION)
     except Exception:
         return set()
+    # ChromaDB get() with no ids returns all documents
     result = coll.get(include=["metadatas"])
     metadatas = result.get("metadatas") or []
     return {str(m.get("athlete_id", "")) for m in metadatas if m and m.get("athlete_id")}
-
-
-def get_existing_position_counts(store) -> dict:
-    """Get count of players per position in the collection."""
-    try:
-        coll = store._client.get_collection(COLLECTION)
-    except Exception:
-        return {}
-    result = coll.get(include=["metadatas"])
-    metadatas = result.get("metadatas") or []
-    counts = {}
-    for m in metadatas:
-        if m and m.get("position"):
-            p = str(m["position"]).strip()
-            if p:
-                counts[p] = counts.get(p, 0) + 1
-    return counts
 
 
 def main():
@@ -64,8 +48,7 @@ def main():
         sys.exit(1)
 
     existing_ids = get_existing_athlete_ids(store)
-    pos_counts = get_existing_position_counts(store)
-    print(f"Found {len(existing_ids)} existing players, {len(pos_counts)} positions. Fetching new players...", flush=True)
+    print(f"Found {len(existing_ids)} existing players in DB. Fetching new players...", flush=True)
 
     from scripts.fetch_data import fetch_teams, fetch_players_multi_year, DEFAULT_YEARS
 
@@ -77,17 +60,14 @@ def main():
         max_teams = (API_CALL_LIMIT - 1) // _CALLS_PER_TEAM
         teams = teams[:max_teams]
 
-    # Pool new players by position for diversity
-    # Skip enough teams to reach rosters not yet in DB (avoid re-fetching same players)
-    base_skip = TEAM_LIMIT or 5
-    skip_teams = max(base_skip, 25) if len(existing_ids) >= 500 else base_skip
+    # Skip first N teams (likely already in DB); fetch from rest for new players
+    skip_teams = TEAM_LIMIT or 5
     teams = teams[skip_teams:]
     print(f"Fetching from {len(teams)} teams (skipped first {skip_teams})...", flush=True)
 
-    pool_by_pos = {}  # position -> {athlete_id: player}
-    total_candidates = 0
+    seen = {}
     for i, team in enumerate(teams):
-        if total_candidates >= add_count * 4:
+        if len(seen) >= add_count:
             break
         try:
             players = fetch_players_multi_year(team, years=DEFAULT_YEARS)
@@ -98,50 +78,21 @@ def main():
                 aid = str(p.get("athlete_id") or "")
                 if not aid or aid in existing_ids:
                     continue
-                existing_ids.add(aid)
-                pos = (p.get("position") or "Unknown").strip() or "Unknown"
-                pool_by_pos.setdefault(pos, {})
-                prev = pool_by_pos[pos].get(aid)
+                existing_ids.add(aid)  # avoid re-adding in same run
+                prev = seen.get(aid)
                 if prev is None or (p.get("season") or 0) > (prev.get("season") or 0):
-                    pool_by_pos[pos][aid] = p
-                total_candidates += 1
-            if (i + 1) % 15 == 0 or i == 0:
-                print(f"  [{i+1}/{len(teams)}] {team}: {total_candidates} candidates", flush=True)
+                    seen[aid] = p
+                if len(seen) >= add_count:
+                    break
+            if (i + 1) % 10 == 0 or i == 0:
+                print(f"  [{i+1}/{len(teams)}] {team}: {len(seen)} new", flush=True)
         except Exception as e:
             print(f"  [{i+1}/{len(teams)}] {team}: ERROR - {e}", flush=True)
             if "429" in str(e):
                 break
         time.sleep(FETCH_DELAY)
 
-    # Select add_count players: prioritize positions with 0 or low count
-    all_positions = sorted(pool_by_pos.keys())
-    positions_ordered = sorted(all_positions, key=lambda p: pos_counts.get(p, 0))
-    seen_aids = set()
-    new_players = []
-    for pos in positions_ordered:
-        if len(new_players) >= add_count:
-            break
-        for aid, p in pool_by_pos[pos].items():
-            if aid in seen_aids:
-                continue
-            seen_aids.add(aid)
-            new_players.append(p)
-            if len(new_players) >= add_count:
-                break
-
-    if len(new_players) < add_count:
-        for pos in all_positions:
-            if len(new_players) >= add_count:
-                break
-            for aid, p in pool_by_pos[pos].items():
-                if aid in seen_aids:
-                    continue
-                seen_aids.add(aid)
-                new_players.append(p)
-                if len(new_players) >= add_count:
-                    break
-
-    new_players = new_players[:add_count]
+    new_players = list(seen.values())[:add_count]
     if not new_players:
         print("No new players to add.")
         return

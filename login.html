@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Pair — Sign In</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+  <meta name="description" content="Portal Pair — Sign in with your .edu email">
+</head>
+<body class="landing">
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo"><img src="images/mascot.svg" alt="" class="mascot">Portal<span>Pair</span></a>
+      <a href="index.html" class="btn btn-ghost">← Back to home</a>
+    </div>
+  </header>
+
+  <main class="landing-main">
+    <h1 class="landing-title">Sign In</h1>
+    <p class="landing-subtitle">Sign in with your .edu email. We'll send you a verification code.</p>
+
+    <div id="stepEmail" class="landing-email-form">
+      <input type="email" id="emailInput" placeholder="you@university.edu" autocomplete="email" />
+      <p id="emailError" class="email-error hidden"></p>
+      <div class="verify-row">
+        <button type="button" id="sendCodeBtn" class="btn btn-primary btn-lg">Send verification code</button>
+        <button type="button" id="bypassEmailBtn" class="btn btn-ghost btn-lg">Bypass (testing)</button>
+      </div>
+    </div>
+
+    <div id="stepCode" class="landing-email-form hidden">
+      <p class="code-sent-msg">Check your inbox for the code sent to <strong id="emailDisplay"></strong></p>
+      <input type="text" id="codeInput" placeholder="Enter 6-digit code" maxlength="8" autocomplete="one-time-code" />
+      <p id="codeError" class="email-error hidden"></p>
+      <div class="verify-row">
+        <button type="button" id="verifyBtn" class="btn btn-primary btn-lg">Verify & sign in</button>
+        <button type="button" id="bypassBtn" class="btn btn-ghost btn-lg">Bypass (testing)</button>
+      </div>
+    </div>
+
+    <p class="landing-note">Only .edu emails accepted. Auth0 2FA via email code.</p>
+  </main>
+
+  <footer class="footer">
+    <p>Portal Pair — Hackalytics 2026</p>
+  </footer>
+
+  <script src="js/auth.js"></script>
+  <script src="js/login.js"></script>
+</body>
+</html>

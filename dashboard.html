@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal Pair — Coach Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-page">
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo"><img src="images/mascot.svg" alt="" class="mascot">Portal<span>Pair</span></a>
+      <nav class="nav-dashboard">
+        <span id="userEmail" class="user-email"></span>
+        <a href="fan-rankings.html" class="btn btn-ghost">Overall Ranking</a>
+        <button id="logoutBtn" class="btn btn-ghost">Log out</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="dashboard-main">
+    <section class="chat-top">
+      <p class="chat-prompt">Describe the player you want — position, play style, program fit. Type it in your own words.</p>
+      <div class="chat-bar">
+        <input type="text" id="chatInput" placeholder="e.g. Fast RB, smaller program, high YPC..." autofocus>
+        <button id="chatSend" class="btn btn-primary">Find</button>
+      </div>
+      <div id="chatMessages" class="chat-messages-mini"></div>
+    </section>
+
+    <section class="matches-section">
+      <h2 class="matches-title">Your matches</h2>
+      <div id="matchesGrid" class="matches-grid hidden"></div>
+      <div id="matchesEmpty" class="matches-empty">
+        <span class="matches-empty-icon">★</span>
+        <p>No matches yet. Use the search above to describe the player you're looking for.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer footer-minimal">
+    <p>Portal Pair · Gemini + VectorAI · College Football Data API</p>
+  </footer>
+
+  <script src="js/auth.js"></script>
+  <script src="js/dashboard.js"></script>
+</body>
+</html>
