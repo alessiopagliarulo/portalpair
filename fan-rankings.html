@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fan Rankings — Portal Pair</title>
+  <title>Overall Rankings — Portal Pair</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,58 +14,40 @@
     <div class="header-inner">
       <a href="index.html" class="logo"><img src="images/mascot.svg" alt="" class="mascot">Portal<span>Pair</span></a>
       <nav class="nav-auth">
-        <a href="fan-rankings.html" class="btn btn-ghost">Fan Rankings</a>
+        <a href="fan-rankings.html" class="btn btn-ghost">Overall Rankings</a>
         <a href="index.html" class="btn btn-ghost">Home</a>
         <a href="login.html" class="btn btn-primary">Login / Sign up</a>
       </nav>
     </div>
   </header>
 
-  <main class="results-section" style="padding-top: 2rem;">
-    <h1 class="section-title" style="margin-bottom: 0.5rem;">Fan Rankings</h1>
-    <p class="section-subtitle" style="margin-bottom: 1.5rem;">Top 20 players in the country with season averages. No account needed.</p>
+  <main class="results-section rankings-centered" style="padding-top: 2rem;">
+    <div class="rankings-title-row">
+      <h1 class="section-title" style="margin-bottom: 0; margin-right: 0.5rem;">Overall Rankings</h1>
+      <a href="how-we-calculate.html" class="info-btn" aria-label="How we calculate">
+        <span class="info-btn-icon">?</span>
+        <span class="info-btn-tooltip">Find Out How We Calculate This</span>
+      </a>
+    </div>
+    <p class="section-subtitle" style="margin-bottom: 1.5rem;">ESPN Top 100 players, 2025 season. Rank 1 is the best. No account needed.</p>
 
     <div id="rankingsHeader" class="results-header">
-      <h2>Top 20 — Overall ranking</h2>
-      <p id="rankingsCount" class="results-count">20 players</p>
+      <h2>Top 100 — Overall ranking</h2>
+      <p id="rankingsCount" class="results-count"></p>
     </div>
-    <div id="rankingsGrid" class="results-grid"></div>
+    <div id="loading" class="loading" style="display: none;">Loading rankings…</div>
+    <div id="rankingsGrid" class="results-grid results-grid-wide"></div>
   </main>
 
   <footer class="footer">
-    <p>Portal Pair — Fan Rankings · No login required · <a href="index.html" style="color: var(--accent);">Back to home</a></p>
+    <p>Portal Pair — Overall Rankings · No login required · <a href="index.html" style="color: var(--accent);">Back to home</a></p>
   </footer>
 
   <script>
     (function () {
-      var players = [
-        { name: 'Quinn Ewers', position: 'QB', school: 'Texas', rating: 97, average: 92.4 },
-        { name: 'Carson Beck', position: 'QB', school: 'Georgia', rating: 96, average: 91.8 },
-        { name: 'Brock Bowers', position: 'TE', school: 'Georgia', rating: 98, average: 94.2 },
-        { name: 'Travis Hunter', position: 'CB', school: 'Colorado', rating: 97, average: 93.1 },
-        { name: 'James Pearce Jr.', position: 'DE', school: 'Tennessee', rating: 95, average: 90.6 },
-        { name: 'Omarion Hampton', position: 'RB', school: 'North Carolina', rating: 94, average: 89.2 },
-        { name: 'Tetairoa McMillan', position: 'WR', school: 'Arizona', rating: 94, average: 88.9 },
-        { name: 'Malaki Starks', position: 'S', school: 'Georgia', rating: 94, average: 88.5 },
-        { name: 'TreVeyon Henderson', position: 'RB', school: 'Ohio State', rating: 93, average: 87.8 },
-        { name: 'Will Campbell', position: 'OT', school: 'LSU', rating: 93, average: 87.4 },
-        { name: 'Will Howard', position: 'QB', school: 'Ohio State', rating: 92, average: 86.1 },
-        { name: 'Evan Stewart', position: 'WR', school: 'Oregon', rating: 92, average: 85.7 },
-        { name: 'Dillon Gabriel', position: 'QB', school: 'Oregon', rating: 91, average: 84.9 },
-        { name: 'Cam Newton', position: 'QB', school: 'Auburn', rating: 91, average: 84.2 },
-        { name: 'Luther Burden III', position: 'WR', school: 'Missouri', rating: 93, average: 86.8 },
-        { name: 'Owen McCown', position: 'QB', school: 'Colorado', rating: 90, average: 83.5 },
-        { name: 'Asa Newsom', position: 'LB', school: 'Iowa', rating: 90, average: 83.1 },
-        { name: 'Nick Singleton', position: 'RB', school: 'Penn State', rating: 89, average: 82.4 },
-        { name: 'Cade Klubnik', position: 'QB', school: 'Clemson', rating: 89, average: 81.9 },
-        { name: 'Deion Walker', position: 'WR', school: 'Notre Dame', rating: 88, average: 81.2 }
-      ];
-      players.sort(function (a, b) { return b.rating - a.rating; });
-      var top20 = players.slice(0, 20);
-
       var grid = document.getElementById('rankingsGrid');
       var countEl = document.getElementById('rankingsCount');
-      countEl.textContent = '20 players';
+      var loading = document.getElementById('loading');
 
       function escapeHtml(s) {
         if (!s) return '';
@@ -74,20 +56,37 @@
         return div.innerHTML;
       }
 
-      top20.forEach(function (p, i) {
-        var card = document.createElement('div');
-        card.className = 'player-card';
-        card.innerHTML =
-          '<div style="font-family: var(--font-mono); font-weight: 600; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.35rem;">#' + (i + 1) + '</div>' +
-          '<h3>' + escapeHtml(p.name) + '</h3>' +
-          '<div class="meta">' +
-            '<span>' + escapeHtml(p.school) + '</span>' +
-            '<span>' + escapeHtml(p.position) + '</span>' +
-            '<span class="pis-badge">Rating ' + escapeHtml(String(p.rating)) + '</span>' +
-          '</div>' +
-          '<div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">Avg: ' + escapeHtml(String(p.average)) + '</div>';
-        grid.appendChild(card);
-      });
+      function render(players) {
+        grid.innerHTML = '';
+        countEl.textContent = players.length + ' players';
+        players.forEach(function (p) {
+          var card = document.createElement('div');
+          card.className = 'player-card';
+          card.className = 'player-card player-card-row';
+          card.innerHTML =
+            '<span class="player-card-rank">#' + escapeHtml(String(p.rank)) + '</span>' +
+            '<span class="player-card-ring"><span>0</span></span>' +
+            '<span class="player-card-name">' + escapeHtml(p.name) + '</span>' +
+            (p.stats ? '<span class="player-card-stats">' + escapeHtml(p.stats) + '</span>' : '');
+          grid.appendChild(card);
+        });
+      }
+
+      loading.style.display = 'block';
+      fetch('/api/rankings')
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          loading.style.display = 'none';
+          if (Array.isArray(data) && data.length > 0) {
+            render(data);
+          } else {
+            countEl.textContent = 'No rankings loaded.';
+          }
+        })
+        .catch(function () {
+          loading.style.display = 'none';
+          countEl.textContent = 'Could not load rankings.';
+        });
     })();
   </script>
 </body>
