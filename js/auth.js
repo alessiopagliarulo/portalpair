@@ -8,19 +8,27 @@ async function initAuth0() {
     return null;
   }
 
-  if (typeof createAuth0Client === 'undefined') {
-    console.warn('Auth0 SPA SDK not loaded.');
+  const createClient = typeof createAuth0Client !== 'undefined' ? createAuth0Client : (window.createAuth0Client || window.auth0CreateClient);
+  if (!createClient) {
+    console.warn('Auth0 SPA SDK not loaded. Check browser console for script load errors.');
     return null;
   }
-  auth0 = await createAuth0Client({
-    domain: config.domain,
-    client_id: config.clientId,
-    authorizationParams: {
-      redirect_uri: window.location.origin + '/dashboard.html',
-      audience: config.audience || undefined
-    }
-  });
-  return auth0;
+
+  try {
+    const redirectUri = window.location.origin + '/dashboard.html';
+    const authParams = { redirect_uri: redirectUri };
+    if (config.audience) authParams.audience = config.audience;
+
+    auth0 = await createClient({
+      domain: config.domain,
+      clientId: config.clientId,
+      authorizationParams: authParams
+    });
+    return auth0;
+  } catch (err) {
+    console.error('Auth0 init failed:', err);
+    return null;
+  }
 }
 
 async function login() {

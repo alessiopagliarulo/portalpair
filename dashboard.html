@@ -12,7 +12,7 @@
 <body>
   <header class="header">
     <div class="header-inner">
-      <a href="index.html" class="logo">Portal<span>Pair</span></a>
+      <a href="index.html" class="logo"><img src="images/mascot.svg" alt="" class="mascot">Portal<span>Pair</span></a>
       <nav class="nav-dashboard">
         <span id="userEmail" class="user-email"></span>
         <button id="logoutBtn" class="btn btn-ghost">Log out</button>
@@ -53,7 +53,7 @@
       <div id="resultsGrid" class="results-grid"></div>
       <div id="loading" class="loading hidden">Loading players...</div>
       <div id="emptyState" class="empty-state">
-        <span class="empty-icon">🏈</span>
+        <img src="images/mascot.svg" alt="" class="empty-icon mascot-inline">
         <p>Search for players or ask the Coach Assistant below what you're looking for.</p>
       </div>
       <div id="errorState" class="error-state hidden"></div>
@@ -79,7 +79,7 @@
   </footer>
 
   <script src="js/config.js"></script>
-  <script src="https://cdn.auth0.com/js/auth0-spa-js/2.2.4/auth0-spa-js.production.min.js"></script>
+  <script src="https://unpkg.com/@auth0/auth0-spa-js@2.2.4/dist/auth0-spa-js.production.min.js" crossorigin="anonymous"></script>
   <script src="js/auth.js"></script>
   <script src="js/dashboard.js"></script>
 </body>
