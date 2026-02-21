@@ -24,11 +24,10 @@ def main():
     store = get_vector_store()
 
     print(f"\nPrompt: \"{prompt}\"")
-    filter_2025 = {"season": "2025"}
-    print(f"Searching top {top_k} matches in '{COLLECTION}' (season 2025)...\n")
+    print(f"Searching top {top_k} matches in '{COLLECTION}'...\n")
 
     query_vec = model.encode([prompt], convert_to_numpy=True)[0].tolist()
-    results = store.search(COLLECTION, query_vec, top_k=top_k, filter_metadata=filter_2025)
+    results = store.search(COLLECTION, query_vec, top_k=top_k)
 
     if not results:
         print("No results found. Is the database populated? Run: python -m scripts.vector_store")
@@ -36,18 +35,15 @@ def main():
 
     print(f"Top {len(results)} results:\n")
     for i, r in enumerate(results, 1):
-        p = r.get("payload", {})
+        doc_id = r.get("id", "")
         score = r.get("score", 0)
-        name = f"{p.get('firstName', '')} {p.get('lastName', '')}".strip()
-        pos = p.get("position", "")
-        team = p.get("team", "")
-        season = p.get("season", "")
-        height = p.get("height", "")
-        weight = p.get("weight", "")
-        usage = p.get("overall", "")
-        print(f"  {i}. {name}")
-        print(f"     {pos} | {team} | {season} | {height} {weight} | usage: {usage}")
-        print(f"     score: {score:.4f}\n")
+        p = r.get("payload", {})
+        print(f"  {i}. doc_id: {doc_id}")
+        print(f"     score: {score:.4f}")
+        print(f"     All fields:")
+        for k in sorted(p.keys()):
+            print(f"       {k}: {p[k]}")
+        print()
 
 
 if __name__ == "__main__":

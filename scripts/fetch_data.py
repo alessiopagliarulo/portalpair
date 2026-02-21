@@ -119,6 +119,28 @@ def fetch_player_usage(
     resp.raise_for_status()
     data = resp.json()
 
+    def _v(p: dict, *keys) -> Optional[float]:
+        """Get first non-None value from API response (flat or nested usage object)."""
+        # Check flat keys
+        for k in keys:
+            v = p.get(k)
+            if v is not None:
+                try:
+                    return float(v)
+                except (ValueError, TypeError):
+                    pass
+        # Check nested usage.*
+        usage = p.get("usage") or p.get("Usage")
+        if isinstance(usage, dict):
+            for k in keys:
+                v = usage.get(k)
+                if v is not None:
+                    try:
+                        return float(v)
+                    except (ValueError, TypeError):
+                        pass
+        return None
+
     result = []
     for p in data:
         result.append({
@@ -127,14 +149,14 @@ def fetch_player_usage(
             "team": p.get("team"),
             "position": p.get("position"),
             "season": p.get("season", year),
-            "overall": p.get("usg_overall"),
-            "pass": p.get("usg_pass"),
-            "rush": p.get("usg_rush"),
-            "firstDown": p.get("usg_1st_down"),
-            "secondDown": p.get("usg_2nd_down"),
-            "thirdDown": p.get("usg_3rd_down"),
-            "standardDowns": p.get("usg_standard_downs"),
-            "passingDowns": p.get("usg_passing_downs"),
+            "overall": _v(p, "usg_overall", "usgOverall", "overall"),
+            "pass": _v(p, "usg_pass", "usgPass", "pass"),
+            "rush": _v(p, "usg_rush", "usgRush", "rush"),
+            "firstDown": _v(p, "usg_1st_down", "usg1stDown", "usg_1stDown", "firstDown"),
+            "secondDown": _v(p, "usg_2nd_down", "usg2ndDown", "usg_2ndDown", "secondDown"),
+            "thirdDown": _v(p, "usg_3rd_down", "usg3rdDown", "usg_3rdDown", "thirdDown"),
+            "standardDowns": _v(p, "usg_standard_downs", "usgStandardDowns", "standardDowns"),
+            "passingDowns": _v(p, "usg_passing_downs", "usgPassingDowns", "passingDowns"),
         })
     return result
 
@@ -163,25 +185,51 @@ def fetch_teams() -> list[dict]:
     return resp.json()
 
 
+def _name_key(p: dict) -> tuple:
+    """Build (firstName, lastName, team, season) for fallback matching."""
+    first = (p.get("firstName") or p.get("first_name") or "").strip().lower()
+    last = (p.get("lastName") or p.get("last_name") or p.get("name") or "").strip().lower()
+    if not last and p.get("name"):
+        parts = str(p["name"]).split(None, 1)
+        first = (parts[0] or "").lower()
+        last = (parts[1] if len(parts) > 1 else "").lower()
+    team = (p.get("team") or "").strip().lower()
+    season = p.get("season")
+    return (first, last, team, season)
+
+
 def merge_roster_and_usage(roster: list[dict], usage: list[dict]) -> list[dict]:
     """Merge roster (profile) and usage into unified player records.
-    Match by (athlete_id, season) when both have season; else by athlete_id."""
-    usage_by_key = {}
+    Match by (athlete_id, season) first; fallback to (firstName, lastName, team, season)."""
+    usage_by_aid = {}
+    usage_by_name = {}
     for u in usage:
-        if u.get("athlete_id") is None:
-            continue
-        aid = str(u["athlete_id"])
+        aid = u.get("athlete_id") or u.get("id")
+        if aid is not None:
+            aid = str(aid)
+            season = u.get("season")
+            key = (aid, season) if season is not None else (aid, None)
+            usage_by_aid[key] = u
+        # Fallback key for name+team+season
+        first = (u.get("firstName") or "").strip().lower()
+        last = (u.get("lastName") or "").strip().lower()
+        if u.get("name"):
+            parts = str(u["name"]).split(None, 1)
+            first = (parts[0] or "").lower()
+            last = (parts[1] if len(parts) > 1 else "").lower()
+        team = (u.get("team") or "").strip().lower()
         season = u.get("season")
-        key = (aid, season) if season is not None else (aid, None)
-        usage_by_key[key] = u
+        if first or last:
+            usage_by_name[(first, last, team, season)] = u
 
     merged = []
     for r in roster:
-        aid = str(r.get("athlete_id") or "")
+        aid = str(r.get("athlete_id") or r.get("id") or "")
         season = r.get("season")
         key = (aid, season) if season is not None else (aid, None)
-        u = usage_by_key.get(key) or usage_by_key.get((aid, None)) or {}
-
+        u = usage_by_aid.get(key) or usage_by_aid.get((aid, None))
+        if u is None:
+            u = usage_by_name.get(_name_key(r)) or {}
         rec = {
             **r,
             "overall": u.get("overall"),
@@ -206,3 +254,43 @@ def fetch_players_multi_year(
     roster = fetch_roster_multi_year(team, years)
     usage = fetch_player_usage_multi_year(years=years, team=team)
     return merge_roster_and_usage(roster, usage)
+
+
+def usage_to_player(u: dict) -> dict:
+    """Convert a usage record to player schema (firstName, lastName, etc.)."""
+    name = (u.get("name") or "").strip()
+    parts = name.split(None, 1)
+    first = parts[0] if parts else ""
+    last = parts[1] if len(parts) > 1 else ""
+    return {
+        "athlete_id": u.get("athlete_id"),
+        "firstName": first,
+        "lastName": last,
+        "team": u.get("team"),
+        "position": u.get("position"),
+        "season": u.get("season"),
+        "height": None,
+        "weight": None,
+        "jersey": None,
+        "homeCity": None,
+        "homeState": None,
+        "homeCountry": None,
+        "overall": u.get("overall"),
+        "pass": u.get("pass"),
+        "rush": u.get("rush"),
+        "firstDown": u.get("firstDown"),
+        "secondDown": u.get("secondDown"),
+        "thirdDown": u.get("thirdDown"),
+        "standardDowns": u.get("standardDowns"),
+        "passingDowns": u.get("passingDowns"),
+    }
+
+
+def fetch_players_usage_only_multi_year(
+    team: str,
+    years: list[int] = None,
+) -> list[dict]:
+    """Fetch usage records only (all have stats). Use when roster merge yields no usage."""
+    years = years or DEFAULT_YEARS
+    usage = fetch_player_usage_multi_year(years=years, team=team)
+    return [usage_to_player(u) for u in usage if u.get("overall") is not None]

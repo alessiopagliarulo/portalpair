@@ -1,4 +1,5 @@
 require('dotenv').config();
+const { spawn } = require('child_process');
 const express = require('express');
 const path = require('path');
 const fs = require('fs');
@@ -6,7 +7,7 @@ const fetch = require('node-fetch');
 const cookieParser = require('cookie-parser');
 
 const app = express();
-const PORT = 8080;
+const PORT = process.env.PORT || 8080;
 const CFB_API = 'https://api.collegefootballdata.com';
 const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN;
 const AUTH0_CLIENT_ID = process.env.AUTH0_CLIENT_ID;
@@ -270,18 +271,50 @@ app.get('/api/rankings', (req, res) => {
   }
 });
 
-// Mock coach suggestions (placeholder for Actian VectorAI + RAG)
+// Coach chatbot: ChromaDB + Cerebras LLM (spawns Python scripts/coach_chat.py)
 app.post('/api/coach/suggest', async (req, res) => {
   const { query } = req.body || {};
-  // Simulate RAG response - in production this would use VectorAI DB
-  const suggestions = [
-    'Try filtering by position and PIS > 75 for impact players.',
-    'Consider players from smaller programs — they often have high Delta W scores.',
-    'Check the transfer portal for available talent matching your criteria.'
-  ];
-  res.json({
-    response: suggestions[Math.floor(Math.random() * suggestions.length)],
-    matches: []
+  const q = String(query || '').trim();
+  if (!q) {
+    return res.json({ response: 'Please enter a question.', matches: [] });
+  }
+
+  const projectRoot = path.resolve(__dirname);
+  const pythonBin = fs.existsSync(path.join(projectRoot, '.venv', 'bin', 'python'))
+    ? path.join(projectRoot, '.venv', 'bin', 'python')
+    : 'python3';
+  const proc = spawn(pythonBin, ['-m', 'scripts.coach_chat', '--json', q], {
+    cwd: projectRoot,
+    env: { ...process.env, TQDM_DISABLE: '1' }
+  });
+
+  let stdout = '';
+  let stderr = '';
+  proc.stdout.on('data', (d) => { stdout += d.toString(); });
+  proc.stderr.on('data', (d) => { stderr += d.toString(); });
+
+  proc.on('close', (code) => {
+    if (code !== 0) {
+      console.error('Coach chat stderr:', stderr);
+      return res.status(500).json({
+        response: stderr.trim() || 'Coach chat failed. Add CEREBRAS_API_KEY to .env',
+        matches: []
+      });
+    }
+    try {
+      const data = JSON.parse(stdout.trim());
+      res.json({ response: data.response || '', matches: data.matches || [] });
+    } catch {
+      res.json({ response: stdout.trim() || 'Invalid response.', matches: [] });
+    }
+  });
+
+  proc.on('error', (err) => {
+    console.error('Coach chat spawn error:', err);
+    res.status(500).json({
+      response: `Failed to run coach chat: ${err.message}. Install: pip install cerebras-cloud-sdk`,
+      matches: []
+    });
   });
 });
 

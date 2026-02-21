@@ -19,6 +19,9 @@ ACTIAN_VECTORAI_HOST = os.getenv("ACTIAN_VECTORAI_HOST", "127.0.0.1:50051")
 USE_CHROMADB = os.getenv("USE_CHROMADB", "1").lower() in ("1", "true", "yes")
 CHROMA_PERSIST_DIRECTORY = os.getenv("CHROMA_PERSIST_DIRECTORY", "./chroma_backup")
 
+# LLM for coach chatbot - Cerebras
+CEREBRAS_API_KEY = os.getenv("CEREBRAS_API_KEY", "")
+
 # Rate limit controls - set TEAM_LIMIT to process fewer teams, FETCH_DELAY between API calls
 # PLAYER_LIMIT caps unique players (default 500)
 # PLAYERS_PER_TEAM caps players per team for variety (default 50 = ~10 teams for 500)
