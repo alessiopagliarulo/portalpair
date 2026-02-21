@@ -447,6 +447,12 @@ body {
   padding: 2rem;
   position: relative;
 }
+.how-step.revealed,
+.story-content.revealed,
+.cta-inner.revealed {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
 .step-num {
   font-family: var(--font-mono);
   font-size: 2rem;
