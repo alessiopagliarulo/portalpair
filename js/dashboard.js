@@ -1,34 +1,15 @@
 const API_BASE = '';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  await initAuth0();
-
-  // Handle Auth0 redirect callback
-  const handled = auth0 && (await handleRedirect());
-  if (handled) {
-    // Stay on dashboard - we're now logged in
-  }
-
-  // Check auth - if not logged in, redirect to landing
-  const authenticated = await isAuthenticated();
-  if (!authenticated && auth0) {
+  const user = await checkAuth();
+  if (!user?.email) {
     window.location.href = 'index.html';
     return;
   }
 
-  // Demo mode: if Auth0 not configured, allow access
-  if (!auth0) {
-    document.getElementById('userEmail').textContent = 'Demo mode — configure Auth0';
-  } else {
-    const user = await getUser();
-    if (user?.email) {
-      document.getElementById('userEmail').textContent = user.email;
-    }
-  }
-
+  document.getElementById('userEmail').textContent = user.email;
   document.getElementById('logoutBtn').addEventListener('click', logout);
 
-  // Player search & chat (same logic as app.js)
   const searchInput = document.getElementById('searchInput');
   const positionFilter = document.getElementById('positionFilter');
   const yearFilter = document.getElementById('yearFilter');
@@ -111,7 +92,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   function hideAll() {
     resultsGrid.classList.add('hidden');
     resultsHeader.classList.add('hidden');
-    emptyState.classList.add('hidden');
+    emptyState.classList.remove('hidden');
     errorState.classList.add('hidden');
     emptyState.innerHTML = '<img src="images/mascot.svg" alt="" class="empty-icon mascot-inline"><p>Search for players or ask the Coach Assistant.</p>';
   }
