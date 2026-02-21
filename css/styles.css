@@ -590,10 +590,11 @@ body {
   gap: 3rem;
 }
 .iu-logo {
-  width: 140px;
-  height: 140px;
+  width: 430px;
+  height: 430px;
   flex-shrink: 0;
-  border-radius: 12px;
+  border-radius: 1px;
+  object-fit: contain;
 }
 .story-text h2 {
   font-size: 1.75rem;
