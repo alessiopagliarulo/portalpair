@@ -293,8 +293,10 @@ def chat_with_matches(query: str) -> tuple[str, list]:
 
 def main():
     json_mode = "--json" in sys.argv
-    args = [a for a in sys.argv[1:] if a != "--json"]
-    query = " ".join(args).strip() if args else ""
+    query = os.environ.get("COACH_QUERY", "").strip()
+    if not query:
+        args = [a for a in sys.argv[1:] if a != "--json"]
+        query = " ".join(args).strip() if args else ""
 
     if not query:
         if json_mode:
@@ -306,7 +308,8 @@ def main():
     response, matches = chat_with_matches(query)
 
     if json_mode:
-        print(json.dumps({"response": response, "matches": matches}))
+        out = json.dumps({"response": response, "matches": matches})
+        print(out, flush=True)
     else:
         print(response)
         for m in matches[:5]:

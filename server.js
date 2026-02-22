@@ -271,6 +271,35 @@ app.get('/api/rankings', (req, res) => {
   }
 });
 
+// Database connection check — verify ChromaDB is reachable
+function runPythonScript(script, args = []) {
+  return new Promise((resolve) => {
+    const projectRoot = path.resolve(__dirname);
+    const pythonBin = fs.existsSync(path.join(projectRoot, '.venv', 'bin', 'python'))
+      ? path.join(projectRoot, '.venv', 'bin', 'python')
+      : 'python3';
+    const proc = spawn(pythonBin, [script, ...args], { cwd: projectRoot, env: { ...process.env, PYTHONPATH: projectRoot } });
+    let out = '';
+    let err = '';
+    proc.stdout.on('data', (d) => { out += d.toString(); });
+    proc.stderr.on('data', (d) => { err += d.toString(); });
+    proc.on('close', (code) => resolve({ code, out: out.trim(), err }));
+  });
+}
+
+app.get('/api/db/status', async (req, res) => {
+  try {
+    const { code, out, err } = await runPythonScript('-m', ['scripts.check_db']);
+    if (code !== 0) {
+      return res.json({ connected: false, error: err || out });
+    }
+    const data = JSON.parse(out || '{}');
+    res.json({ connected: data.connected, path: data.path, playerCount: data.playerCount, error: data.error });
+  } catch (e) {
+    res.json({ connected: false, error: e.message });
+  }
+});
+
 // Coach chatbot: ChromaDB + Cerebras LLM (spawns Python scripts/coach_chat.py)
 app.post('/api/coach/suggest', async (req, res) => {
   const { query } = req.body || {};
@@ -283,9 +312,13 @@ app.post('/api/coach/suggest', async (req, res) => {
   const pythonBin = fs.existsSync(path.join(projectRoot, '.venv', 'bin', 'python'))
     ? path.join(projectRoot, '.venv', 'bin', 'python')
     : 'python3';
-  const proc = spawn(pythonBin, ['-m', 'scripts.coach_chat', '--json', q], {
+  // Run in shell with proxy unset — system proxy causes 403 when sentence-transformers loads cached model
+  const proxyKeys = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy', 'GIT_HTTP_PROXY', 'GIT_HTTPS_PROXY', 'SOCKS_PROXY', 'SOCKS5_PROXY'];
+  const env = { ...process.env, COACH_QUERY: q, TQDM_DISABLE: '1', HF_HUB_OFFLINE: '1', TRANSFORMERS_OFFLINE: '1', PYTHONUNBUFFERED: '1' };
+  proxyKeys.forEach(k => delete env[k]);
+  const proc = spawn(pythonBin, ['-m', 'scripts.coach_chat', '--json'], {
     cwd: projectRoot,
-    env: { ...process.env, TQDM_DISABLE: '1' }
+    env
   });
 
   let stdout = '';
@@ -301,12 +334,24 @@ app.post('/api/coach/suggest', async (req, res) => {
         matches: []
       });
     }
+    // Extract JSON — coach_chat prints one JSON object; libraries may add other stdout
+    let data = null;
     try {
-      const data = JSON.parse(stdout.trim());
-      res.json({ response: data.response || '', matches: data.matches || [] });
-    } catch {
-      res.json({ response: stdout.trim() || 'Invalid response.', matches: [] });
+      data = JSON.parse(stdout.trim());
+    } catch (_e) {
+      const lines = stdout.trim().split('\n');
+      for (let i = lines.length - 1; i >= 0; i--) {
+        const line = lines[i].trim();
+        if (line.startsWith('{')) {
+          try {
+            data = JSON.parse(line);
+            break;
+          } catch (_e2) { /* try earlier line */ }
+        }
+      }
     }
+    const matches = (data && Array.isArray(data.matches)) ? data.matches : [];
+    res.json({ response: (data && data.response) || stdout.trim() || 'Invalid response.', matches });
   });
 
   proc.on('error', (err) => {
