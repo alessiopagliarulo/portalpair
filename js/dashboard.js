@@ -86,7 +86,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         ? `<div class="match-circle" style="--pct:${pct}" title="${pct}% match"><span class="match-circle-value">${pct}</span></div>`
         : '';
       const playerName = p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim();
-      const viewStatsUrl = `stat-viewer.html?player=${encodeURIComponent(playerName)}${p.team ? '&team=' + encodeURIComponent(p.team) : ''}`;
+      let viewStatsUrl = `stat-viewer.html?player=${encodeURIComponent(playerName)}${p.team ? '&team=' + encodeURIComponent(p.team) : ''}`;
+      if (p.docId) viewStatsUrl += '&doc_id=' + encodeURIComponent(p.docId);
+      else if (p.athlete_id && p.team && p.season) viewStatsUrl += '&athlete_id=' + encodeURIComponent(p.athlete_id) + '&season=' + encodeURIComponent(p.season);
       const bookmarked = isBookmarked(p);
       if (bookmarked) card.classList.add('bookmarked');
       card.innerHTML = `

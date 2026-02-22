@@ -17,6 +17,7 @@
     .player-select-bar { display: flex; gap: 0.75rem; align-items: center; margin-bottom: 2rem; }
     .player-select-bar input { flex: 1; padding: 0.85rem 1.25rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 1rem; }
     .player-select-bar input:focus { outline: none; border-color: var(--accent); }
+    .player-select-bar input[readonly] { background: var(--bg-elevated); cursor: default; }
     .view-stats-btn { display: inline-block; margin-top: 0.75rem; padding: 0.5rem 1rem; background: var(--accent); color: white; border-radius: var(--radius); font-size: 0.9rem; font-weight: 500; text-decoration: none; transition: background 0.2s; }
     .view-stats-btn:hover { background: var(--accent-dim); color: white; }
     .chart-container { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; margin-bottom: 1.5rem; min-height: 280px; }
@@ -32,6 +33,11 @@
     .stat-filter-label { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; }
     .stat-filter-checks { display: flex; flex-direction: column; gap: 0.4rem; }
     .stat-filter-checks label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; cursor: pointer; }
+    .biodata-section { margin-bottom: 1.5rem; }
+    .biodata-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
+    .biodata-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
+    .biodata-label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+    .biodata-value { font-size: 1.1rem; font-weight: 600; }
   </style>
 </head>
 <body class="stat-viewer-page dashboard-page">
@@ -53,12 +59,20 @@
     <div class="player-select-bar">
       <input type="text" id="playerInput" placeholder="Enter player name (e.g. Tyler Little)">
       <input type="text" id="teamInput" placeholder="Team (optional)">
-      <button id="loadBtn" class="btn btn-primary">Load Stats</button>
     </div>
 
     <div id="errorEl" class="stat-viewer-error hidden"></div>
     <div id="loadingEl" class="stat-viewer-loading hidden">Loading...</div>
-    <div id="emptyEl" class="stat-viewer-empty hidden">Enter a player name and click Load Stats.</div>
+    <div id="emptyEl" class="stat-viewer-empty hidden">No player selected. Go to the Dashboard and click View Stats on a match.</div>
+
+    <div id="biodataArea" class="biodata-section hidden">
+      <div class="biodata-grid">
+        <div class="biodata-card"><span class="biodata-label">Height</span><span class="biodata-value" id="bioHeight">—</span></div>
+        <div class="biodata-card"><span class="biodata-label">Weight</span><span class="biodata-value" id="bioWeight">—</span></div>
+        <div class="biodata-card"><span class="biodata-label">Jersey</span><span class="biodata-value" id="bioJersey">—</span></div>
+        <div class="biodata-card"><span class="biodata-label">Hometown</span><span class="biodata-value" id="bioHometown">—</span></div>
+      </div>
+    </div>
 
     <div id="chartsArea" class="hidden">
       <div class="chart-container">

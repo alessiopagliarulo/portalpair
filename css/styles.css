@@ -674,6 +674,15 @@ body {
 }
 .landing-cta { margin-bottom: 1rem; }
 .btn-lg { padding: 0.9rem 1.75rem; font-size: 1rem; }
+.auth0-notice {
+  font-size: 0.95rem;
+  color: var(--accent);
+  background: var(--accent-light);
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius);
+  margin-bottom: 1rem;
+}
+
 .landing-note {
   font-size: 0.9rem;
   color: var(--text-muted);

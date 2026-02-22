@@ -1,0 +1,158 @@
+/* Player Profile Page */
+
+.profile-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-main {
+  flex: 1;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 2rem;
+}
+
+.profile-loading,
+.profile-error {
+  text-align: center;
+  padding: 3rem;
+  color: var(--text-muted);
+}
+
+.profile-error.error {
+  color: var(--danger);
+}
+
+.profile-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.profile-header {
+  margin-bottom: 2rem;
+  padding: 1.5rem 1.75rem;
+  background: linear-gradient(135deg, #2d6a2d 0%, #1b5e20 30%, #0d47a1 70%, #1565c0 100%);
+  border-radius: var(--radius);
+  color: white;
+  box-shadow: 0 4px 20px rgba(45, 106, 45, 0.25);
+}
+
+.profile-header .profile-meta {
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.profile-name {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+  color: white;
+}
+
+.profile-meta {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+}
+
+/* Biometric section */
+.biometric-section {
+  display: grid;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.biometric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+}
+
+.biometric-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem 1.25rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.biometric-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.35rem;
+}
+
+.biometric-value {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.profile-grid {
+  display: grid;
+  gap: 2rem;
+}
+
+.profile-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.profile-section:first-of-type {
+  border-left: 4px solid var(--accent);
+}
+
+.profile-section:last-of-type h2 {
+  color: var(--accent);
+}
+
+.profile-section h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text);
+  padding-bottom: 0.5rem;
+}
+
+.profile-fields {
+  display: grid;
+  gap: 0.5rem 1.5rem;
+  grid-template-columns: auto 1fr;
+}
+
+.profile-fields dt {
+  font-weight: 500;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.profile-fields dd {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.chart-container {
+  position: relative;
+  padding: 1rem 0;
+  margin-top: 1rem;
+  min-height: 280px;
+}
+
+.chart-container canvas {
+  max-height: 260px;
+}
+
+.chart-container:first-of-type {
+  margin-top: 0;
+}

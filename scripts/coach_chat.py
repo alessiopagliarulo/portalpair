@@ -115,6 +115,7 @@ def _results_to_matches(results: list) -> list:
     for r in results:
         p = r.get("payload", {})
         score = r.get("score", 0)
+        doc_id = r.get("id", "")
         name = f"{p.get('firstName', '')} {p.get('lastName', '')}".strip()
         try:
             height = int(p.get("height") or 0)
@@ -134,6 +135,8 @@ def _results_to_matches(results: list) -> list:
             "weight": weight,
             "matchPct": round(score * 100) if isinstance(score, (int, float)) else None,
             "season": p.get("season", ""),
+            "docId": doc_id,
+            "athlete_id": p.get("athlete_id", ""),
             "overall": p.get("overall"),
             "pass": p.get("pass"),
             "rush": p.get("rush"),

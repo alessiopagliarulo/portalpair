@@ -15,17 +15,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   const params = new URLSearchParams(window.location.search);
   const preloadPlayer = params.get('player') || '';
   const preloadTeam = params.get('team') || '';
+  const preloadDocId = params.get('doc_id') || '';
+  const preloadAthleteId = params.get('athlete_id') || '';
+  const preloadSeason = params.get('season') || '';
 
   const playerInput = document.getElementById('playerInput');
   const teamInput = document.getElementById('teamInput');
-  const loadBtn = document.getElementById('loadBtn');
   const errorEl = document.getElementById('errorEl');
   const loadingEl = document.getElementById('loadingEl');
   const emptyEl = document.getElementById('emptyEl');
   const chartsArea = document.getElementById('chartsArea');
+  const biodataArea = document.getElementById('biodataArea');
 
   playerInput.value = decodeURIComponent(preloadPlayer || '');
   teamInput.value = decodeURIComponent(preloadTeam || '');
+  if (preloadPlayer) {
+    playerInput.readOnly = true;
+    teamInput.readOnly = true;
+  }
 
   let overallChart = null;
   let usageChart = null;
@@ -45,6 +52,21 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function showCharts(show) {
     chartsArea.classList.toggle('hidden', !show);
+  }
+
+  function showBiodata(show) {
+    biodataArea.classList.toggle('hidden', !show);
+  }
+
+  function renderBiodata(data) {
+    const heightStr = data.height != null
+      ? (Math.floor(parseInt(data.height, 10) / 12) + "'" + (parseInt(data.height, 10) % 12) + '"')
+      : '—';
+    document.getElementById('bioHeight').textContent = heightStr;
+    document.getElementById('bioWeight').textContent = data.weight != null ? data.weight + ' lbs' : '—';
+    document.getElementById('bioJersey').textContent = (data.jersey != null && data.jersey !== '') ? '#' + data.jersey : '—';
+    const hometownParts = [data.homeCity, data.homeState, data.homeCountry].filter(Boolean);
+    document.getElementById('bioHometown').textContent = hometownParts.length ? hometownParts.join(', ') : '—';
   }
 
   function destroyCharts() {
@@ -106,7 +128,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       data: {
         labels,
         datasets: [{
-          label: 'Overall Usage %',
+          label: 'Overall involvement %',
           data: overallData,
           backgroundColor: CHART_COLORS[0],
         }],
@@ -116,7 +138,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         maintainAspectRatio: true,
         plugins: { legend: { display: false } },
         scales: {
-          y: { beginAtZero: true, max: 100, title: { display: true, text: 'Usage %' } },
+          y: { beginAtZero: true, max: 100, title: { display: true, text: 'Involvement %' } },
         },
       },
     });
@@ -170,11 +192,26 @@ document.addEventListener('DOMContentLoaded', async () => {
           interaction: { mode: 'index', intersect: false },
           plugins: { legend: { position: 'top' } },
           scales: {
-            y: { beginAtZero: true, max: 100, title: { display: true, text: 'Usage %' } },
+            y: { beginAtZero: true, max: 100, title: { display: true, text: 'Involvement %' } },
           },
         },
       });
     }
+  }
+
+  async function loadBiodata() {
+    if (!preloadDocId && !(preloadAthleteId && preloadTeam && preloadSeason)) return;
+    try {
+      let url = `${API_BASE}/api/player/profile?`;
+      if (preloadDocId) url += 'doc_id=' + encodeURIComponent(preloadDocId);
+      else url += 'athlete_id=' + encodeURIComponent(preloadAthleteId) + '&team=' + encodeURIComponent(preloadTeam) + '&season=' + encodeURIComponent(preloadSeason);
+      const res = await fetch(url);
+      const data = await res.json();
+      if (res.ok && data && !data.error) {
+        renderBiodata(data);
+        showBiodata(true);
+      }
+    } catch (_) {}
   }
 
   async function loadStats() {
@@ -187,6 +224,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     showLoading(true);
     showCharts(false);
     showEmpty(false);
+    showBiodata(false);
+
+    loadBiodata();
 
     try {
       const q = new URLSearchParams({ player });
@@ -209,9 +249,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   document.getElementById('statFilters')?.addEventListener('change', () => updateUsageChart());
-
-  loadBtn.addEventListener('click', loadStats);
-  playerInput.addEventListener('keydown', (e) => e.key === 'Enter' && loadStats());
 
   if (preloadPlayer) {
     loadStats();
