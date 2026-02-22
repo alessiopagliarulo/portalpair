@@ -13,10 +13,16 @@
   <header class="header">
     <div class="header-inner">
       <a href="index.html" class="logo"><img src="images/mascot.svg" alt="" class="mascot">Portal<span>Pair</span></a>
-      <nav class="nav-auth">
+      <nav id="navPublic" class="nav-auth">
         <a href="fan-rankings.html" class="btn btn-ghost">Overall Rankings</a>
         <a href="index.html" class="btn btn-ghost">Home</a>
         <a href="login.html" class="btn btn-primary">Login / Sign up</a>
+      </nav>
+      <nav id="navLoggedIn" class="nav-dashboard" style="display:none;">
+        <a href="dashboard.html" class="btn btn-ghost">Dashboard</a>
+        <a href="my-players.html" class="btn btn-ghost">My Players</a>
+        <a href="fan-rankings.html" class="btn btn-ghost">Overall Rankings</a>
+        <button id="logoutBtn" class="btn btn-ghost">Log out</button>
       </nav>
     </div>
   </header>
@@ -43,8 +49,18 @@
     <p>Portal Pair — Overall Rankings · No login required · <a href="index.html" style="color: var(--accent);">Back to home</a></p>
   </footer>
 
+  <link rel="stylesheet" href="css/dashboard.css">
+  <script src="js/auth.js"></script>
   <script>
     (function () {
+      checkAuth().then(function (user) {
+        if (user && user.email) {
+          document.getElementById('navPublic').style.display = 'none';
+          document.getElementById('navLoggedIn').style.display = '';
+          var btn = document.getElementById('logoutBtn');
+          if (btn) btn.addEventListener('click', function () { logout(); });
+        }
+      }).catch(function () {});
       var grid = document.getElementById('rankingsGrid');
       var countEl = document.getElementById('rankingsCount');
       var loading = document.getElementById('loading');

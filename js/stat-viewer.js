@@ -1,5 +1,103 @@
 const API_BASE = '';
 
+const POSITION_MAP = {
+  QB: 'QB', RB: 'RB', FB: 'RB',
+  WR: 'WR_TE', TE: 'WR_TE',
+  OL: 'OL', OT: 'OL', OG: 'OL', C: 'OL',
+  DL: 'DL', DE: 'DL', DT: 'DL', NT: 'DL',
+  LB: 'LB', ILB: 'LB', OLB: 'LB', MLB: 'LB',
+  DB: 'DB', CB: 'DB', S: 'DB', FS: 'DB', SS: 'DB',
+  K: 'K', P: 'P',
+  KR: 'Returner', PR: 'Returner',
+};
+
+const POSITION_STAT_DEFS = {
+  QB: [
+    { key: 'passing_yards', label: 'Passing Yards' },
+    { key: 'passing_tds', label: 'Passing TDs' },
+    { key: 'interceptions', label: 'Interceptions' },
+    { key: 'completion_pct', label: 'Completion %' },
+    { key: 'yards_per_attempt', label: 'Yards/Attempt' },
+    { key: 'rushing_yards', label: 'Rushing Yards' },
+    { key: 'rushing_tds', label: 'Rushing TDs' },
+  ],
+  RB: [
+    { key: 'rushing_attempts', label: 'Rush Attempts' },
+    { key: 'rushing_yards', label: 'Rushing Yards' },
+    { key: 'yards_per_carry', label: 'Yards/Carry' },
+    { key: 'rushing_tds', label: 'Rushing TDs' },
+    { key: 'receptions', label: 'Receptions' },
+    { key: 'receiving_yards', label: 'Receiving Yards' },
+  ],
+  WR_TE: [
+    { key: 'targets', label: 'Targets' },
+    { key: 'receptions', label: 'Receptions' },
+    { key: 'receiving_yards', label: 'Receiving Yards' },
+    { key: 'yards_per_catch', label: 'Yards/Catch' },
+    { key: 'receiving_tds', label: 'Receiving TDs' },
+  ],
+  OL: [
+    { key: 'sacks_allowed', label: 'Sacks Allowed' },
+    { key: 'pressures_allowed', label: 'Pressures Allowed' },
+    { key: 'penalties', label: 'Penalties' },
+    { key: 'run_block_win_rate', label: 'Run Block Win %' },
+    { key: 'pass_block_win_rate', label: 'Pass Block Win %' },
+  ],
+  DL: [
+    { key: 'total_tackles', label: 'Total Tackles' },
+    { key: 'tfl', label: 'TFL' },
+    { key: 'sacks', label: 'Sacks' },
+    { key: 'qb_hits', label: 'QB Hits' },
+    { key: 'pressures', label: 'Pressures' },
+  ],
+  LB: [
+    { key: 'total_tackles', label: 'Total Tackles' },
+    { key: 'tfl', label: 'TFL' },
+    { key: 'sacks', label: 'Sacks' },
+    { key: 'interceptions', label: 'Interceptions' },
+  ],
+  DB: [
+    { key: 'tackles', label: 'Tackles' },
+    { key: 'interceptions', label: 'Interceptions' },
+    { key: 'passes_defended', label: 'Passes Defended' },
+    { key: 'completion_pct_allowed', label: 'Completion % Allowed' },
+    { key: 'yards_allowed', label: 'Yards Allowed' },
+  ],
+  K: [
+    { key: 'field_goal_pct', label: 'FG %' },
+    { key: 'longest_fg', label: 'Longest FG' },
+    { key: 'extra_point_pct', label: 'XP %' },
+  ],
+  P: [
+    { key: 'punt_average', label: 'Punt Average' },
+    { key: 'inside_20', label: 'Inside 20' },
+    { key: 'touchbacks', label: 'Touchbacks' },
+  ],
+  Returner: [
+    { key: 'kick_return_avg', label: 'Kick Ret Avg' },
+    { key: 'punt_return_avg', label: 'Punt Ret Avg' },
+    { key: 'return_tds', label: 'Return TDs' },
+  ],
+};
+
+const CHART_COLORS = [
+  'rgb(59, 130, 246)',
+  'rgb(239, 68, 68)',
+  'rgb(249, 115, 22)',
+  'rgb(139, 92, 246)',
+  'rgb(20, 184, 166)',
+  'rgb(234, 179, 8)',
+  'rgb(236, 72, 153)',
+  'rgb(6, 182, 212)',
+  'rgb(132, 204, 22)',
+  'rgb(45, 106, 45)',
+];
+
+function getStatGroup(position) {
+  const pos = (position || '').trim().toUpperCase();
+  return POSITION_MAP[pos] || 'Returner';
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   let user = null;
   if (sessionStorage.getItem('testBypass')) {
@@ -26,6 +124,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const emptyEl = document.getElementById('emptyEl');
   const chartsArea = document.getElementById('chartsArea');
   const biodataArea = document.getElementById('biodataArea');
+  const statSelect = document.getElementById('statSelect');
 
   playerInput.value = decodeURIComponent(preloadPlayer || '');
   teamInput.value = decodeURIComponent(preloadTeam || '');
@@ -34,34 +133,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     teamInput.readOnly = true;
   }
 
-  let overallChart = null;
-  let usageChart = null;
+  let statChart = null;
+  let chartDataCache = null;
+  let currentStatDefs = [];
 
   function showError(msg) {
     errorEl.textContent = msg || '';
     errorEl.classList.toggle('hidden', !msg);
   }
-
-  function showLoading(show) {
-    loadingEl.classList.toggle('hidden', !show);
-  }
-
-  function showEmpty(show) {
-    emptyEl.classList.toggle('hidden', !show);
-  }
-
-  function showCharts(show) {
-    chartsArea.classList.toggle('hidden', !show);
-  }
-
-  function showBiodata(show) {
-    biodataArea.classList.toggle('hidden', !show);
-  }
+  function showLoading(show) { loadingEl.classList.toggle('hidden', !show); }
+  function showEmpty(show) { emptyEl.classList.toggle('hidden', !show); }
+  function showCharts(show) { chartsArea.classList.toggle('hidden', !show); }
+  function showBiodata(show) { biodataArea.classList.toggle('hidden', !show); }
 
   function renderBiodata(data) {
     const heightStr = data.height != null
       ? (Math.floor(parseInt(data.height, 10) / 12) + "'" + (parseInt(data.height, 10) % 12) + '"')
       : '—';
+    document.getElementById('bioPosition').textContent = data.position || '—';
     document.getElementById('bioHeight').textContent = heightStr;
     document.getElementById('bioWeight').textContent = data.weight != null ? data.weight + ' lbs' : '—';
     document.getElementById('bioJersey').textContent = (data.jersey != null && data.jersey !== '') ? '#' + data.jersey : '—';
@@ -69,41 +158,78 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('bioHometown').textContent = hometownParts.length ? hometownParts.join(', ') : '—';
   }
 
-  function destroyCharts() {
-    if (overallChart) {
-      overallChart.destroy();
-      overallChart = null;
-    }
-    if (usageChart) {
-      usageChart.destroy();
-      usageChart = null;
-    }
+  function destroyChart() {
+    if (statChart) { statChart.destroy(); statChart = null; }
   }
 
-  const CHART_COLORS = [
-    'rgb(45, 106, 45)',    // green
-    'rgb(59, 130, 246)',    // blue
-    'rgb(239, 68, 68)',     // red
-    'rgb(249, 115, 22)',    // orange
-    'rgb(139, 92, 246)',    // purple
-    'rgb(20, 184, 166)',    // teal
-    'rgb(234, 179, 8)',     // amber
-  ];
+  function buildDropdown(statDefs) {
+    statSelect.innerHTML = '';
+    statDefs.forEach((def) => {
+      const opt = document.createElement('option');
+      opt.value = def.key;
+      opt.textContent = def.label;
+      statSelect.appendChild(opt);
+    });
+  }
 
-  const STAT_DEFS = [
-    { key: 'pass', label: 'Pass', colorIdx: 0 },
-    { key: 'rush', label: 'Rush', colorIdx: 1 },
-    { key: 'firstDown', label: '1st Down', colorIdx: 2 },
-    { key: 'secondDown', label: '2nd Down', colorIdx: 3 },
-    { key: 'thirdDown', label: '3rd Down', colorIdx: 4 },
-    { key: 'standardDowns', label: 'Standard Downs', colorIdx: 5 },
-    { key: 'passingDowns', label: 'Passing Downs', colorIdx: 6 },
-  ];
+  function renderChart() {
+    if (!chartDataCache || currentStatDefs.length === 0) return;
+    destroyChart();
 
-  let chartDataCache = null;
+    const selectedKey = statSelect.value;
+    const def = currentStatDefs.find(d => d.key === selectedKey) || currentStatDefs[0];
+    const data = chartDataCache[def.key];
+    if (!data) return;
+
+    const colorIdx = currentStatDefs.indexOf(def);
+    const color = CHART_COLORS[colorIdx % CHART_COLORS.length];
+    const rgba = color.replace('rgb', 'rgba').replace(')', ', 0.3)');
+
+    const ctx = document.getElementById('statChart').getContext('2d');
+    statChart = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels: chartDataCache.labels,
+        datasets: [{
+          label: def.label,
+          data: data,
+          borderColor: color,
+          backgroundColor: rgba,
+          fill: true,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          tension: 0.25,
+          borderWidth: 2.5,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                const v = ctx.raw;
+                if (v == null) return def.label + ': —';
+                return def.label + ': ' + (v % 1 === 0 ? String(v) : v.toFixed(1));
+              },
+            },
+          },
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: def.label },
+          },
+        },
+      },
+    });
+  }
 
   function buildCharts(data) {
-    destroyCharts();
+    destroyChart();
     const seasons = data.seasons || [];
     if (seasons.length === 0) {
       showCharts(false);
@@ -112,92 +238,26 @@ document.addEventListener('DOMContentLoaded', async () => {
       return;
     }
 
-    const labels = seasons.map(s => String(s.season));
-    const overallData = seasons.map(s => s.overall != null ? (s.overall * 100) : null);
-    const passData = seasons.map(s => s.pass != null ? (s.pass * 100) : null);
-    const rushData = seasons.map(s => s.rush != null ? (s.rush * 100) : null);
-    const firstDownData = seasons.map(s => s.firstDown != null ? (s.firstDown * 100) : null);
-    const secondDownData = seasons.map(s => s.secondDown != null ? (s.secondDown * 100) : null);
-    const thirdDownData = seasons.map(s => s.thirdDown != null ? (s.thirdDown * 100) : null);
-    const standardDownsData = seasons.map(s => s.standardDowns != null ? (s.standardDowns * 100) : null);
-    const passingDownsData = seasons.map(s => s.passingDowns != null ? (s.passingDowns * 100) : null);
+    const position = data.player?.position || '';
+    const group = getStatGroup(position);
+    const statDefs = POSITION_STAT_DEFS[group] || POSITION_STAT_DEFS.Returner;
+    currentStatDefs = statDefs;
 
-    const ctx1 = document.getElementById('overallChart').getContext('2d');
-    overallChart = new Chart(ctx1, {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Overall involvement %',
-          data: overallData,
-          backgroundColor: CHART_COLORS[0],
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: { legend: { display: false } },
-        scales: {
-          y: { beginAtZero: true, max: 100, title: { display: true, text: 'Involvement %' } },
-        },
-      },
+    buildDropdown(statDefs);
+
+    const labels = seasons.map(s => String(s.season));
+    chartDataCache = { labels };
+    statDefs.forEach((def) => {
+      chartDataCache[def.key] = seasons.map(s => s[def.key] != null ? Number(s[def.key]) : null);
     });
 
-    chartDataCache = {
-      labels,
-      pass: passData,
-      rush: rushData,
-      firstDown: firstDownData,
-      secondDown: secondDownData,
-      thirdDown: thirdDownData,
-      standardDowns: standardDownsData,
-      passingDowns: passingDownsData,
-    };
-
-    updateUsageChart();
+    renderChart();
     showCharts(true);
     showEmpty(false);
     showError('');
   }
 
-  function updateUsageChart() {
-    if (!chartDataCache) return;
-    const datasets = [];
-    STAT_DEFS.forEach((def) => {
-      const cb = document.querySelector(`#statFilters input[data-stat="${def.key}"]`);
-      if (!cb?.checked) return;
-      const data = chartDataCache[def.key];
-      if (!data || !data.some(v => v != null)) return;
-      const color = CHART_COLORS[def.colorIdx];
-      const rgba = color.replace('rgb', 'rgba').replace(')', ', 0.25)');
-      datasets.push({
-        label: def.label,
-        data: data,
-        borderColor: color,
-        backgroundColor: rgba,
-        fill: false,
-      });
-    });
-    if (usageChart) {
-      usageChart.data.datasets = datasets;
-      usageChart.update();
-    } else {
-      const ctx2 = document.getElementById('usageChart').getContext('2d');
-      usageChart = new Chart(ctx2, {
-        type: 'line',
-        data: { labels: chartDataCache.labels, datasets },
-        options: {
-          responsive: true,
-          maintainAspectRatio: true,
-          interaction: { mode: 'index', intersect: false },
-          plugins: { legend: { position: 'top' } },
-          scales: {
-            y: { beginAtZero: true, max: 100, title: { display: true, text: 'Involvement %' } },
-          },
-        },
-      });
-    }
-  }
+  statSelect.addEventListener('change', () => renderChart());
 
   async function loadBiodata() {
     if (!preloadDocId && !(preloadAthleteId && preloadTeam && preloadSeason)) return;
@@ -241,14 +301,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
       buildCharts(data);
+      if (data.player) {
+        renderBiodata(data.player);
+        showBiodata(true);
+      }
     } catch (err) {
       showLoading(false);
       showError('Connection error. Make sure the server is running.');
       showEmpty(true);
     }
   }
-
-  document.getElementById('statFilters')?.addEventListener('change', () => updateUsageChart());
 
   if (preloadPlayer) {
     loadStats();

@@ -48,6 +48,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     return list.some(b => playerKey(b) === key);
   }
 
+  function getBookmarkNote(p) {
+    const list = getBookmarks();
+    const key = playerKey(p);
+    const entry = list.find(b => playerKey(b) === key);
+    return entry?.note || '';
+  }
+
   function toggleBookmark(p, btn, card) {
     const list = getBookmarks();
     const key = playerKey(p);
@@ -90,6 +97,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (p.docId) viewStatsUrl += '&doc_id=' + encodeURIComponent(p.docId);
       else if (p.athlete_id && p.team && p.season) viewStatsUrl += '&athlete_id=' + encodeURIComponent(p.athlete_id) + '&season=' + encodeURIComponent(p.season);
       const bookmarked = isBookmarked(p);
+      const note = getBookmarkNote(p);
       if (bookmarked) card.classList.add('bookmarked');
       card.innerHTML = `
         <div class="player-card-content">
@@ -103,6 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             <span>Height: ${heightStr}</span>
             <span>Weight: ${weightStr}</span>
           </div>
+          ${note ? `<div class="player-note-display">${escapeHtml(note)}</div>` : ''}
           <div class="player-card-actions">
             <a href="${viewStatsUrl}" class="view-stats-btn">View Stats</a>
             <button type="button" class="add-to-my-players-btn ${bookmarked ? 'added' : ''}" data-match-idx="${idx}">${bookmarked ? 'In My Players ✓' : 'Add to My Players'}</button>

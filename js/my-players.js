@@ -58,6 +58,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }
 
+  function playerKey(p) {
+    const name = (p.name || `${p.firstName || ''} ${p.lastName || ''}`).trim();
+    const team = (p.team || '').trim();
+    return name + '::' + team;
+  }
+
+  function updateNote(p, noteText) {
+    const list = getBookmarks();
+    const key = playerKey(p);
+    const entry = list.find(b => playerKey(b) === key);
+    if (entry) {
+      entry.note = noteText;
+      saveBookmarks(list);
+    }
+  }
+
   function render(players) {
     if (!players || players.length === 0) {
       grid.classList.add('hidden');
@@ -85,12 +101,30 @@ document.addEventListener('DOMContentLoaded', async () => {
           <span>Height: ${heightStr}</span>
           <span>Weight: ${weightStr}</span>
         </div>
+        <div class="player-note-area">
+          <label class="player-note-label">Coach Notes</label>
+          <textarea class="player-note-input" placeholder="Add your notes about this player...">${escapeHtml(p.note || '')}</textarea>
+          <div class="player-note-saved">Saved</div>
+        </div>
         <div class="my-players-actions">
           <a href="${viewStatsUrl}" class="view-stats-btn">View Stats</a>
         </div>
       `;
       const removeBtn = card.querySelector('.remove-bookmark-btn');
       removeBtn.addEventListener('click', () => removeBookmark(p, card));
+
+      let saveTimer = null;
+      const textarea = card.querySelector('.player-note-input');
+      const savedIndicator = card.querySelector('.player-note-saved');
+      textarea.addEventListener('input', () => {
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(() => {
+          updateNote(p, textarea.value);
+          savedIndicator.classList.add('show');
+          setTimeout(() => savedIndicator.classList.remove('show'), 1500);
+        }, 400);
+      });
+
       grid.appendChild(card);
     });
   }

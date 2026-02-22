@@ -27,12 +27,10 @@
     .stat-viewer-empty { color: var(--text-muted); padding: 2rem; text-align: center; }
     .back-link { display: inline-block; margin-bottom: 1rem; color: var(--accent); text-decoration: none; font-weight: 500; }
     .back-link:hover { text-decoration: underline; }
-    .usage-chart-row { display: flex; gap: 1.5rem; align-items: flex-start; margin-bottom: 1.5rem; }
-    .usage-chart-row .chart-container { flex: 1; min-width: 0; margin-bottom: 0; }
-    .stat-filter-section { flex-shrink: 0; padding: 1rem; background: var(--bg-elevated); border-radius: var(--radius); border: 1px solid var(--border); }
-    .stat-filter-label { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.5rem; }
-    .stat-filter-checks { display: flex; flex-direction: column; gap: 0.4rem; }
-    .stat-filter-checks label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.9rem; cursor: pointer; }
+    .stat-select-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem; }
+    .stat-select-label { font-size: 0.95rem; font-weight: 600; }
+    .stat-select { padding: 0.6rem 1rem; border: 1px solid var(--border); border-radius: var(--radius); font-size: 0.95rem; background: var(--bg-card); cursor: pointer; min-width: 200px; }
+    .stat-select:focus { outline: none; border-color: var(--accent); }
     .biodata-section { margin-bottom: 1.5rem; }
     .biodata-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 1rem; }
     .biodata-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
@@ -67,6 +65,7 @@
 
     <div id="biodataArea" class="biodata-section hidden">
       <div class="biodata-grid">
+        <div class="biodata-card"><span class="biodata-label">Position</span><span class="biodata-value" id="bioPosition">—</span></div>
         <div class="biodata-card"><span class="biodata-label">Height</span><span class="biodata-value" id="bioHeight">—</span></div>
         <div class="biodata-card"><span class="biodata-label">Weight</span><span class="biodata-value" id="bioWeight">—</span></div>
         <div class="biodata-card"><span class="biodata-label">Jersey</span><span class="biodata-value" id="bioJersey">—</span></div>
@@ -75,25 +74,12 @@
     </div>
 
     <div id="chartsArea" class="hidden">
-      <div class="chart-container">
-        <canvas id="overallChart"></canvas>
+      <div class="stat-select-row">
+        <label for="statSelect" class="stat-select-label">Select stat:</label>
+        <select id="statSelect" class="stat-select"></select>
       </div>
-      <div class="usage-chart-row">
-        <div class="chart-container">
-          <canvas id="usageChart"></canvas>
-        </div>
-        <div class="stat-filter-section">
-          <p class="stat-filter-label">Show stats on graph:</p>
-          <div class="stat-filter-checks" id="statFilters">
-            <label><input type="checkbox" data-stat="pass" checked> Pass</label>
-            <label><input type="checkbox" data-stat="rush" checked> Rush</label>
-            <label><input type="checkbox" data-stat="firstDown" checked> 1st Down</label>
-            <label><input type="checkbox" data-stat="secondDown" checked> 2nd Down</label>
-            <label><input type="checkbox" data-stat="thirdDown" checked> 3rd Down</label>
-            <label><input type="checkbox" data-stat="standardDowns" checked> Standard Downs</label>
-            <label><input type="checkbox" data-stat="passingDowns" checked> Passing Downs</label>
-          </div>
-        </div>
+      <div class="chart-container">
+        <canvas id="statChart"></canvas>
       </div>
     </div>
   </main>

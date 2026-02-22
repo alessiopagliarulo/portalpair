@@ -41,15 +41,32 @@ Infer fit from position (WR/TE = pass-catchers), height, weight, usage, and team
 CRITICAL: Never mention any year or season (e.g. 2024, 2025, 2023) in your response. Do not write "BYU 2024" or similar—use only the team name and player info. Omit year/season entirely."""
 
 
-def _pct(v) -> str:
-    """Format usage value as percentage."""
+IDENTITY_KEYS = {
+    "athlete_id", "firstName", "lastName", "team", "position",
+    "jersey", "height", "weight", "homeCity", "homeState",
+    "homeCountry", "season", "text", "_id",
+}
+
+
+def _format_stat(k, v) -> str:
+    """Format a stat key-value pair for human-readable display."""
     if v is None or v == "":
         return ""
+    label = k.replace("_", " ").title()
     try:
         f = float(v)
-        return f"{f:.1%}"
+        if "pct" in k or "rate" in k:
+            return f"{label}: {f:.1f}%"
+        if f == int(f):
+            return f"{label}: {int(f)}"
+        return f"{label}: {f:.1f}"
     except (ValueError, TypeError):
-        return str(v)
+        return f"{label}: {v}"
+
+
+def _collect_stats(payload: dict) -> dict:
+    """Extract all stat fields (non-identity keys) from a payload."""
+    return {k: v for k, v in payload.items() if k not in IDENTITY_KEYS and v is not None and v != ""}
 
 
 def _format_players_for_llm(results: list) -> str:
@@ -62,25 +79,12 @@ def _format_players_for_llm(results: list) -> str:
         height = p.get("height", "")
         weight = p.get("weight", "")
         parts = [f"{i}. {name} ({pos}) - {team}, Ht:{height} Wt:{weight}"]
-        u = []
-        if p.get("overall") is not None:
-            u.append(f"overall {_pct(p['overall'])}")
-        if p.get("pass") is not None:
-            u.append(f"pass {_pct(p['pass'])}")
-        if p.get("rush") is not None:
-            u.append(f"rush {_pct(p['rush'])}")
-        if p.get("firstDown") is not None:
-            u.append(f"1st {_pct(p['firstDown'])}")
-        if p.get("secondDown") is not None:
-            u.append(f"2nd {_pct(p['secondDown'])}")
-        if p.get("thirdDown") is not None:
-            u.append(f"3rd {_pct(p['thirdDown'])}")
-        if p.get("standardDowns") is not None:
-            u.append(f"std {_pct(p['standardDowns'])}")
-        if p.get("passingDowns") is not None:
-            u.append(f"passDown {_pct(p['passingDowns'])}")
-        if u:
-            parts.append(" | usage: " + ", ".join(u))
+        stats = _collect_stats(p)
+        if stats:
+            stat_strs = [_format_stat(k, v) for k, v in stats.items()]
+            stat_strs = [s for s in stat_strs if s]
+            if stat_strs:
+                parts.append(" | stats: " + ", ".join(stat_strs))
         lines.append("".join(parts))
     return "\n".join(lines) if lines else "No players found in database."
 
@@ -95,17 +99,12 @@ def _format_players_for_llm_from_matches(matches: list) -> str:
         height = m.get("height", "")
         weight = m.get("weight", "")
         parts = [f"{i}. {name} ({pos}) - {team}, Ht:{height} Wt:{weight}"]
-        u = []
-        for k, label in [
-            ("overall", "overall"), ("pass", "pass"), ("rush", "rush"),
-            ("firstDown", "1st"), ("secondDown", "2nd"), ("thirdDown", "3rd"),
-            ("standardDowns", "std"), ("passingDowns", "passDown"),
-        ]:
-            v = m.get(k)
-            if v is not None:
-                u.append(f"{label} {_pct(v)}")
-        if u:
-            parts.append(" | usage: " + ", ".join(u))
+        stats = m.get("stats", {})
+        if stats:
+            stat_strs = [_format_stat(k, v) for k, v in stats.items()]
+            stat_strs = [s for s in stat_strs if s]
+            if stat_strs:
+                parts.append(" | stats: " + ", ".join(stat_strs))
         lines.append("".join(parts))
     return "\n".join(lines) if lines else "No players found in database."
 
@@ -125,7 +124,7 @@ def _results_to_matches(results: list) -> list:
             weight = int(p.get("weight") or 0)
         except (ValueError, TypeError):
             weight = None
-        matches.append({
+        match = {
             "name": name or "Unknown",
             "firstName": p.get("firstName", ""),
             "lastName": p.get("lastName", ""),
@@ -137,15 +136,9 @@ def _results_to_matches(results: list) -> list:
             "season": p.get("season", ""),
             "docId": doc_id,
             "athlete_id": p.get("athlete_id", ""),
-            "overall": p.get("overall"),
-            "pass": p.get("pass"),
-            "rush": p.get("rush"),
-            "firstDown": p.get("firstDown"),
-            "secondDown": p.get("secondDown"),
-            "thirdDown": p.get("thirdDown"),
-            "standardDowns": p.get("standardDowns"),
-            "passingDowns": p.get("passingDowns"),
-        })
+            "stats": _collect_stats(p),
+        }
+        matches.append(match)
     return _deduplicate_matches(matches)
 
 

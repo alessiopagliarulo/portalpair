@@ -16,16 +16,31 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from scripts.vector_store import COLLECTION, get_vector_store
 
+IDENTITY_KEYS = {
+    "athlete_id", "firstName", "lastName", "team", "position",
+    "jersey", "height", "weight", "homeCity", "homeState",
+    "homeCountry", "season", "text", "_id",
+}
+
+
+def _parse_number(v):
+    if v is None or v == "":
+        return None
+    try:
+        f = float(v)
+        if f == int(f) and "." not in str(v):
+            return int(f)
+        return round(f, 1)
+    except (ValueError, TypeError):
+        return v
+
 
 def main():
     json_mode = "--json" in sys.argv
-    # When run as "python -m scripts.get_player_profile --json X", argv has -m and module name.
-    # Take only args after --json to get our real arguments.
     if "--json" in sys.argv:
         args = sys.argv[sys.argv.index("--json") + 1:]
     else:
         args = [a for a in sys.argv[1:] if a != "--json" and a != "-m" and not a.startswith("scripts.")]
-    # Support: doc_id  OR  athlete_id team season
     doc_id = None
     if len(args) == 1:
         doc_id = args[0]
@@ -52,7 +67,6 @@ def main():
                 print("{}")
             return
         meta = metadatas[0] if metadatas else {}
-        # Ensure _id is present (ChromaDB doc id)
         out = {"_id": doc_id}
         for k, v in meta.items():
             if k in ("height", "weight") and v is not None:
@@ -60,11 +74,8 @@ def main():
                     out[k] = int(v)
                 except (ValueError, TypeError):
                     out[k] = v
-            elif k in ("overall", "pass", "rush", "firstDown", "secondDown", "thirdDown", "standardDowns", "passingDowns") and v is not None:
-                try:
-                    out[k] = float(v)
-                except (ValueError, TypeError):
-                    out[k] = v
+            elif k not in IDENTITY_KEYS:
+                out[k] = _parse_number(v)
             else:
                 out[k] = v
         if json_mode:

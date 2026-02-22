@@ -3,8 +3,7 @@
 Fetches CFBD player data (roster + usage 2020-2025), embeds, and stores.
 Profile: firstName, lastName, team, height, weight, jersey, position,
          homeCity, homeState, homeCountry
-Usage: passingDowns, standardDowns, thirdDown, secondDown, firstDown,
-       rush, pass, overall
+Stats: position-specific (see expand_seasons.py POSITION_STATS)
 """
 
 import os
@@ -206,12 +205,8 @@ class ActianVectorAIStore(VectorStore):
             time.sleep(FETCH_DELAY)
 
         all_players = list(seen.values())
-        all_players = [p for p in all_players if p.get("overall") is not None]
         if PLAYER_LIMIT:
             all_players = all_players[:PLAYER_LIMIT]
-
-        def _rand_usage(lo: float = 0.03, hi: float = 0.25) -> float:
-            return round(random.uniform(lo, hi), 4)
 
         def _fill_missing(p: dict) -> dict:
             pos = (p.get("position") or "Unknown").strip().upper() or "Unknown"
@@ -245,22 +240,15 @@ class ActianVectorAIStore(VectorStore):
                 "homeCity": p.get("homeCity") or "",
                 "homeState": p.get("homeState") or "",
                 "homeCountry": p.get("homeCountry") or "",
-                "overall": p.get("overall") if p.get("overall") is not None else _rand_usage(0.04, 0.35),
-                "pass": p.get("pass") if p.get("pass") is not None else _rand_usage(0.02, 0.45),
-                "rush": p.get("rush") if p.get("rush") is not None else _rand_usage(0.02, 0.30),
-                "firstDown": p.get("firstDown") if p.get("firstDown") is not None else _rand_usage(0.03, 0.30),
-                "secondDown": p.get("secondDown") if p.get("secondDown") is not None else _rand_usage(0.03, 0.28),
-                "thirdDown": p.get("thirdDown") if p.get("thirdDown") is not None else _rand_usage(0.02, 0.25),
-                "standardDowns": p.get("standardDowns") if p.get("standardDowns") is not None else _rand_usage(0.03, 0.30),
-                "passingDowns": p.get("passingDowns") if p.get("passingDowns") is not None else _rand_usage(0.02, 0.40),
             }
         all_players = [_fill_missing(p) for p in all_players]
 
-        print(f"Fetched {len(all_players)} unique players with usage stats. Generating embeddings...", flush=True)
+        print(f"Fetched {len(all_players)} unique players. Generating embeddings...", flush=True)
         if not all_players:
             return 0
 
         def _to_text(p: dict) -> str:
+            from scripts.expand_seasons import ALL_STAT_KEYS
             parts = [
                 f"{p.get('firstName', '')} {p.get('lastName', '')}".strip(),
                 p.get("position", ""),
@@ -270,29 +258,19 @@ class ActianVectorAIStore(VectorStore):
                 str(p.get("weight", "")) + " lbs" if p.get("weight") else "",
                 f"Jersey {p.get('jersey')}" if p.get("jersey") else "",
             ]
-            u = []
-            if p.get("overall") is not None:
-                u.append(f"usage {p['overall']:.2%}")
-            if p.get("pass") is not None:
-                u.append(f"pass {p['pass']:.2%}")
-            if p.get("rush") is not None:
-                u.append(f"rush {p['rush']:.2%}")
-            if p.get("firstDown") is not None:
-                u.append(f"1st {p['firstDown']:.2%}")
-            if p.get("secondDown") is not None:
-                u.append(f"2nd {p['secondDown']:.2%}")
-            if p.get("thirdDown") is not None:
-                u.append(f"3rd {p['thirdDown']:.2%}")
-            if p.get("standardDowns") is not None:
-                u.append(f"std {p['standardDowns']:.2%}")
-            if p.get("passingDowns") is not None:
-                u.append(f"passDown {p['passingDowns']:.2%}")
-            if u:
-                parts.append(" ".join(u))
+            stat_parts = []
+            for k in sorted(ALL_STAT_KEYS):
+                v = p.get(k)
+                if v is not None:
+                    label = k.replace("_", " ")
+                    stat_parts.append(f"{label} {v}")
+            if stat_parts:
+                parts.append(" ".join(stat_parts))
             return " | ".join(x for x in parts if x)
 
         def _payload(p: dict, text: str, doc_id: str) -> dict:
-            return {
+            from scripts.expand_seasons import ALL_STAT_KEYS
+            out = {
                 "_id": doc_id,
                 "athlete_id": str(p.get("athlete_id", "") or ""),
                 "season": str(p.get("season", "") or ""),
@@ -307,15 +285,12 @@ class ActianVectorAIStore(VectorStore):
                 "homeState": p.get("homeState") or "",
                 "homeCountry": p.get("homeCountry") or "",
                 "text": text,
-                "overall": f"{float(p.get('overall') or 0):.4f}",
-                "pass": f"{float(p.get('pass') or 0):.4f}",
-                "rush": f"{float(p.get('rush') or 0):.4f}",
-                "firstDown": f"{float(p.get('firstDown') or 0):.4f}",
-                "secondDown": f"{float(p.get('secondDown') or 0):.4f}",
-                "thirdDown": f"{float(p.get('thirdDown') or 0):.4f}",
-                "standardDowns": f"{float(p.get('standardDowns') or 0):.4f}",
-                "passingDowns": f"{float(p.get('passingDowns') or 0):.4f}",
             }
+            for k in ALL_STAT_KEYS:
+                v = p.get(k)
+                if v is not None:
+                    out[k] = str(v)
+            return out
 
         model = SentenceTransformer("all-MiniLM-L6-v2")
         texts = [_to_text(p) for p in all_players]
@@ -541,14 +516,8 @@ def _load_all_data_impl(store: VectorStore, label: str, append: bool = False) ->
         time.sleep(FETCH_DELAY)
 
     all_players = list(seen.values())
-    # Only include players with usage data (overall, pass, rush, etc.)
-    all_players = [p for p in all_players if p.get("overall") is not None]
     if PLAYER_LIMIT:
         all_players = all_players[:PLAYER_LIMIT]
-
-    def _rand_usage(lo: float = 0.03, hi: float = 0.25) -> float:
-        """Random usage percentage, plausible for rotational/backup player."""
-        return round(random.uniform(lo, hi), 4)
 
     def _fill_missing(p: dict) -> dict:
         """Fill missing fields with randomly generated but reasonable defaults."""
@@ -569,7 +538,6 @@ def _load_all_data_impl(store: VectorStore, label: str, append: bool = False) ->
         if wt is None:
             wt = int(round(base_wt + random.uniform(-20, 25)))
             wt = max(170, min(350, wt))
-        base_usage = _rand_usage()
         return {
             **p,
             "athlete_id": p.get("athlete_id") or f"{p.get('firstName','')}_{p.get('lastName','')}_{p.get('team','')}_{p.get('season','')}".strip("_") or "unknown",
@@ -584,22 +552,15 @@ def _load_all_data_impl(store: VectorStore, label: str, append: bool = False) ->
             "homeCity": p.get("homeCity") or "",
             "homeState": p.get("homeState") or "",
             "homeCountry": p.get("homeCountry") or "",
-            "overall": p.get("overall") if p.get("overall") is not None else _rand_usage(0.04, 0.35),
-            "pass": p.get("pass") if p.get("pass") is not None else _rand_usage(0.02, 0.45),
-            "rush": p.get("rush") if p.get("rush") is not None else _rand_usage(0.02, 0.30),
-            "firstDown": p.get("firstDown") if p.get("firstDown") is not None else _rand_usage(0.03, 0.30),
-            "secondDown": p.get("secondDown") if p.get("secondDown") is not None else _rand_usage(0.03, 0.28),
-            "thirdDown": p.get("thirdDown") if p.get("thirdDown") is not None else _rand_usage(0.02, 0.25),
-            "standardDowns": p.get("standardDowns") if p.get("standardDowns") is not None else _rand_usage(0.03, 0.30),
-            "passingDowns": p.get("passingDowns") if p.get("passingDowns") is not None else _rand_usage(0.02, 0.40),
         }
     all_players = [_fill_missing(p) for p in all_players]
 
-    print(f"{label}: Fetched {len(all_players)} unique players with usage stats. Generating embeddings...", flush=True)
+    print(f"{label}: Fetched {len(all_players)} unique players. Generating embeddings...", flush=True)
     if not all_players:
         return 0
 
     def _to_text(p: dict) -> str:
+        from scripts.expand_seasons import ALL_STAT_KEYS
         parts = [
             f"{p.get('firstName', '')} {p.get('lastName', '')}".strip(),
             p.get("position", ""),
@@ -609,30 +570,19 @@ def _load_all_data_impl(store: VectorStore, label: str, append: bool = False) ->
             str(p.get("weight", "")) + " lbs" if p.get("weight") else "",
             f"Jersey {p.get('jersey')}" if p.get("jersey") else "",
         ]
-        u = []
-        if p.get("overall") is not None:
-            u.append(f"usage {p['overall']:.2%}")
-        if p.get("pass") is not None:
-            u.append(f"pass {p['pass']:.2%}")
-        if p.get("rush") is not None:
-            u.append(f"rush {p['rush']:.2%}")
-        if p.get("firstDown") is not None:
-            u.append(f"1st {p['firstDown']:.2%}")
-        if p.get("secondDown") is not None:
-            u.append(f"2nd {p['secondDown']:.2%}")
-        if p.get("thirdDown") is not None:
-            u.append(f"3rd {p['thirdDown']:.2%}")
-        if p.get("standardDowns") is not None:
-            u.append(f"std {p['standardDowns']:.2%}")
-        if p.get("passingDowns") is not None:
-            u.append(f"passDown {p['passingDowns']:.2%}")
-        if u:
-            parts.append(" ".join(u))
+        stat_parts = []
+        for k in sorted(ALL_STAT_KEYS):
+            v = p.get(k)
+            if v is not None:
+                label = k.replace("_", " ")
+                stat_parts.append(f"{label} {v}")
+        if stat_parts:
+            parts.append(" ".join(stat_parts))
         return " | ".join(x for x in parts if x)
 
     def _payload(p: dict, text: str, doc_id: str) -> dict:
-        """Build document payload. All fields have defaults from _fill_missing."""
-        return {
+        from scripts.expand_seasons import ALL_STAT_KEYS
+        out = {
             "_id": doc_id,
             "athlete_id": str(p.get("athlete_id", "") or ""),
             "season": str(p.get("season", "") or ""),
@@ -647,15 +597,12 @@ def _load_all_data_impl(store: VectorStore, label: str, append: bool = False) ->
             "homeState": p.get("homeState") or "",
             "homeCountry": p.get("homeCountry") or "",
             "text": text,
-            "overall": f"{float(p.get('overall') or 0):.4f}",
-            "pass": f"{float(p.get('pass') or 0):.4f}",
-            "rush": f"{float(p.get('rush') or 0):.4f}",
-            "firstDown": f"{float(p.get('firstDown') or 0):.4f}",
-            "secondDown": f"{float(p.get('secondDown') or 0):.4f}",
-            "thirdDown": f"{float(p.get('thirdDown') or 0):.4f}",
-            "standardDowns": f"{float(p.get('standardDowns') or 0):.4f}",
-            "passingDowns": f"{float(p.get('passingDowns') or 0):.4f}",
         }
+        for k in ALL_STAT_KEYS:
+            v = p.get(k)
+            if v is not None:
+                out[k] = str(v)
+        return out
 
     model = SentenceTransformer("all-MiniLM-L6-v2")
     ids = [f"{p.get('athlete_id', i)}_{p.get('team', '')}_{p.get('season', '')}" for i, p in enumerate(all_players)]
