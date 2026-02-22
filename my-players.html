@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Players — Portal Pair</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/dashboard.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-page my-players-page">
+  <header class="header">
+    <div class="header-inner">
+      <a href="index.html" class="logo"><img src="images/mascot.svg" alt="" class="mascot">Portal<span>Pair</span></a>
+      <nav class="nav-dashboard">
+        <span id="userEmail" class="user-email"></span>
+        <a href="dashboard.html" class="btn btn-ghost">Dashboard</a>
+        <a href="fan-rankings.html" class="btn btn-ghost">Overall Ranking</a>
+        <button id="logoutBtn" class="btn btn-ghost">Log out</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="dashboard-main">
+    <h1 class="matches-title">My Players</h1>
+    <p class="my-players-desc">Your bookmarked players. Remove any you no longer need.</p>
+    <div id="bookmarksGrid" class="matches-grid hidden"></div>
+    <div id="bookmarksEmpty" class="matches-empty">
+      <span class="matches-empty-icon">★</span>
+      <p>No bookmarked players yet. Go to the Dashboard, search for players, and click the star to bookmark them.</p>
+      <a href="dashboard.html" class="btn btn-primary" style="margin-top: 1rem;">Go to Dashboard</a>
+    </div>
+  </main>
+
+  <script src="js/auth.js"></script>
+  <script src="js/my-players.js"></script>
+</body>
+</html>

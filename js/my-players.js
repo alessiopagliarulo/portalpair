@@ -1,0 +1,99 @@
+const BOOKMARKS_KEY = 'portal_pair_my_players';
+
+document.addEventListener('DOMContentLoaded', async () => {
+  let user = null;
+  if (sessionStorage.getItem('testBypass')) {
+    user = { email: 'test@bypass.edu' };
+  } else {
+    user = await checkAuth?.();
+  }
+  if (!user?.email && typeof checkAuth === 'function') {
+    window.location.href = 'login.html';
+    return;
+  }
+
+  document.getElementById('userEmail').textContent = user.email;
+  document.getElementById('logoutBtn').addEventListener('click', logout);
+
+  const grid = document.getElementById('bookmarksGrid');
+  const empty = document.getElementById('bookmarksEmpty');
+
+  function getBookmarks() {
+    try {
+      const raw = localStorage.getItem(BOOKMARKS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveBookmarks(list) {
+    localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(list));
+  }
+
+  function escapeHtml(s) {
+    if (!s) return '';
+    const div = document.createElement('div');
+    div.textContent = s;
+    return div.innerHTML;
+  }
+
+  function loadBookmarks() {
+    const players = getBookmarks();
+    render(players);
+  }
+
+  function removeBookmark(player, card) {
+    const list = getBookmarks();
+    const name = (player.name || `${player.firstName || ''} ${player.lastName || ''}`).trim();
+    const team = (player.team || '').trim();
+    const key = name + '::' + team;
+    const filtered = list.filter(b => (b.name || `${b.firstName || ''} ${b.lastName || ''}`).trim() + '::' + (b.team || '').trim() !== key);
+    saveBookmarks(filtered);
+    card.remove();
+    const remaining = grid.querySelectorAll('.player-card');
+    if (remaining.length === 0) {
+      grid.classList.add('hidden');
+      empty.classList.remove('hidden');
+    }
+  }
+
+  function render(players) {
+    if (!players || players.length === 0) {
+      grid.classList.add('hidden');
+      empty.classList.remove('hidden');
+      return;
+    }
+    empty.classList.add('hidden');
+    grid.classList.remove('hidden');
+    grid.innerHTML = '';
+    players.forEach((p) => {
+      const card = document.createElement('div');
+      card.className = 'player-card bookmarked';
+      const heightStr = p.height ? `${Math.floor(p.height / 12)}'${p.height % 12}"` : '—';
+      const weightStr = p.weight ? `${p.weight} lbs` : '—';
+      const playerName = p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim();
+      const viewStatsUrl = `stat-viewer.html?player=${encodeURIComponent(playerName)}${p.team ? '&team=' + encodeURIComponent(p.team) : ''}`;
+      card.innerHTML = `
+        <div class="player-card-header">
+          <h3>${escapeHtml(playerName)}</h3>
+          <button type="button" class="remove-bookmark-btn" title="Remove from My Players">✕</button>
+        </div>
+        <div class="meta">
+          ${p.team ? `<span>${escapeHtml(p.team)}</span>` : ''}
+          ${p.position ? `<span>${escapeHtml(p.position)}</span>` : ''}
+          <span>Height: ${heightStr}</span>
+          <span>Weight: ${weightStr}</span>
+        </div>
+        <div class="my-players-actions">
+          <a href="${viewStatsUrl}" class="view-stats-btn">View Stats</a>
+        </div>
+      `;
+      const removeBtn = card.querySelector('.remove-bookmark-btn');
+      removeBtn.addEventListener('click', () => removeBookmark(p, card));
+      grid.appendChild(card);
+    });
+  }
+
+  loadBookmarks();
+});

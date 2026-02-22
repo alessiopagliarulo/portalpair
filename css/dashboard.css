@@ -82,6 +82,7 @@
 }
 
 .matches-grid .player-card {
+  position: relative;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -93,9 +94,15 @@
   border-color: var(--accent);
 }
 
+.player-card-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  flex-wrap: wrap;
+}
+
 .view-stats-btn {
   display: inline-block;
-  margin-top: 0.75rem;
   padding: 0.5rem 1rem;
   background: var(--accent);
   color: white !important;
@@ -111,6 +118,29 @@
   color: white !important;
 }
 
+.add-to-my-players-btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 0.9rem;
+  font-weight: 500;
+  background: var(--bg-card);
+  color: var(--text);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.add-to-my-players-btn:hover {
+  border-color: var(--accent);
+}
+
+.add-to-my-players-btn.added {
+  background: #fffbeb;
+  border-color: #d4a017;
+  color: #b8860b;
+}
+
 .player-card-header {
   display: flex;
   align-items: center;
@@ -122,6 +152,41 @@
   margin: 0;
   flex: 1;
   min-width: 0;
+}
+
+.matches-grid .player-card.bookmarked {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.remove-bookmark-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  cursor: pointer;
+  color: var(--text-muted);
+  line-height: 1;
+  border-radius: var(--radius);
+  transition: color 0.2s, background 0.2s;
+}
+
+.remove-bookmark-btn:hover {
+  color: var(--danger);
+  background: #ffebee;
+}
+
+.my-players-actions {
+  margin-top: 0.75rem;
+}
+
+.my-players-desc {
+  color: var(--text-muted);
+  margin-bottom: 1.25rem;
+  font-size: 0.95rem;
 }
 
 .player-stats {

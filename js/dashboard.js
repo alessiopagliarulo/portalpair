@@ -21,7 +21,52 @@ document.addEventListener('DOMContentLoaded', async () => {
   const matchesGrid = document.getElementById('matchesGrid');
   const matchesEmpty = document.getElementById('matchesEmpty');
 
+  const BOOKMARKS_KEY = 'portal_pair_my_players';
+
+  function getBookmarks() {
+    try {
+      const raw = localStorage.getItem(BOOKMARKS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function saveBookmarks(list) {
+    localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(list));
+  }
+
+  function playerKey(p) {
+    const name = (p.name || `${p.firstName || ''} ${p.lastName || ''}`).trim();
+    const team = (p.team || '').trim();
+    return name + '::' + team;
+  }
+
+  function isBookmarked(p) {
+    const list = getBookmarks();
+    const key = playerKey(p);
+    return list.some(b => playerKey(b) === key);
+  }
+
+  function toggleBookmark(p, btn, card) {
+    const list = getBookmarks();
+    const key = playerKey(p);
+    const idx = list.findIndex(b => playerKey(b) === key);
+    const wasBookmarked = idx >= 0;
+    const player = { name: (p.name || `${p.firstName || ''} ${p.lastName || ''}`).trim(), firstName: p.firstName || '', lastName: p.lastName || '', team: p.team || '', position: p.position || '', height: p.height, weight: p.weight };
+    if (wasBookmarked) {
+      list.splice(idx, 1);
+    } else {
+      list.push(player);
+    }
+    saveBookmarks(list);
+    btn.classList.toggle('added', !wasBookmarked);
+    btn.textContent = !wasBookmarked ? 'In My Players ✓' : 'Add to My Players';
+    if (card) card.classList.toggle('bookmarked', !wasBookmarked);
+  }
+
   function showMatches(players) {
+    currentMatches = players || [];
     if (!players || players.length === 0) {
       matchesGrid.classList.add('hidden');
       matchesEmpty.classList.remove('hidden');
@@ -30,9 +75,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     matchesEmpty.classList.add('hidden');
     matchesGrid.innerHTML = '';
     matchesGrid.classList.remove('hidden');
-    players.forEach((p) => {
+    players.forEach((p, idx) => {
       const card = document.createElement('div');
       card.className = 'player-card';
+      card.dataset.matchIndex = String(idx);
       const pct = p.matchPct != null ? Math.round(p.matchPct) : null;
       const heightStr = p.height ? `${Math.floor(p.height / 12)}'${p.height % 12}"` : '—';
       const weightStr = p.weight ? `${p.weight} lbs` : '—';
@@ -41,19 +87,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         : '';
       const playerName = p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim();
       const viewStatsUrl = `stat-viewer.html?player=${encodeURIComponent(playerName)}${p.team ? '&team=' + encodeURIComponent(p.team) : ''}`;
+      const bookmarked = isBookmarked(p);
+      if (bookmarked) card.classList.add('bookmarked');
       card.innerHTML = `
-        <div class="player-card-header">
-          <h3>${escapeHtml(playerName)}</h3>
-          ${circleHtml}
+        <div class="player-card-content">
+          <div class="player-card-header">
+            <h3>${escapeHtml(playerName)}</h3>
+            ${circleHtml}
+          </div>
+          <div class="meta">
+            ${p.team ? `<span>${escapeHtml(p.team)}</span>` : ''}
+            ${p.position ? `<span>${escapeHtml(p.position)}</span>` : ''}
+            <span>Height: ${heightStr}</span>
+            <span>Weight: ${weightStr}</span>
+          </div>
+          <div class="player-card-actions">
+            <a href="${viewStatsUrl}" class="view-stats-btn">View Stats</a>
+            <button type="button" class="add-to-my-players-btn ${bookmarked ? 'added' : ''}" data-match-idx="${idx}">${bookmarked ? 'In My Players ✓' : 'Add to My Players'}</button>
+          </div>
         </div>
-        <div class="meta">
-          ${p.team ? `<span>${escapeHtml(p.team)}</span>` : ''}
-          ${p.position ? `<span>${escapeHtml(p.position)}</span>` : ''}
-          <span>Height: ${heightStr}</span>
-          <span>Weight: ${weightStr}</span>
-        </div>
-        <a href="${viewStatsUrl}" class="view-stats-btn">View Stats</a>
       `;
+      const addBtn = card.querySelector('.add-to-my-players-btn');
+      addBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const player = currentMatches[parseInt(addBtn.dataset.matchIdx, 10)];
+        if (player) toggleBookmark(player, addBtn, card);
+      });
       matchesGrid.appendChild(card);
     });
   }
@@ -65,8 +124,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     return div.innerHTML;
   }
 
-  // Start with empty matches
   showMatches([]);
+
+  window.addEventListener('pageshow', () => {
+    if (currentMatches.length > 0) {
+      showMatches(currentMatches);
+    }
+  });
 
   async function sendCoachMessage() {
     const text = chatInput.value.trim();

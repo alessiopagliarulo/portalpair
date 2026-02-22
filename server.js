@@ -14,6 +14,7 @@ const AUTH0_CLIENT_ID = process.env.AUTH0_CLIENT_ID;
 const AUTH0_CLIENT_SECRET = process.env.AUTH0_CLIENT_SECRET;
 const COOKIE_SECRET = process.env.COOKIE_SECRET || 'REDACTED_DEV_COOKIE_SECRET';
 const DB_PATH = path.join(__dirname, 'data', 'logins.json');
+const BOOKMARKS_PATH = path.join(__dirname, 'data', 'bookmarks.json');
 
 app.use(express.json());
 app.use(cookieParser(COOKIE_SECRET));
@@ -137,6 +138,74 @@ app.get('/api/auth/me', (req, res) => {
 app.post('/api/auth/logout', (req, res) => {
   res.clearCookie('user');
   res.json({ success: true });
+});
+
+// Bookmarks — per-user persisted across login/logout
+function loadBookmarks() {
+  ensureDbDir();
+  if (!fs.existsSync(BOOKMARKS_PATH)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(BOOKMARKS_PATH, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+function saveBookmarks(all) {
+  ensureDbDir();
+  fs.writeFileSync(BOOKMARKS_PATH, JSON.stringify(all, null, 2));
+}
+
+function playerKey(p) {
+  const name = (p.name || `${p.firstName || ''} ${p.lastName || ''}`).trim();
+  const team = (p.team || '').trim();
+  return `${name}::${team}`;
+}
+
+app.get('/api/bookmarks', (req, res) => {
+  const email = req.signedCookies?.user;
+  if (!email) return res.status(401).json({ error: 'Not authenticated' });
+  const all = loadBookmarks();
+  res.json(all[email] || []);
+});
+
+app.post('/api/bookmarks', (req, res) => {
+  const email = req.signedCookies?.user;
+  if (!email) return res.status(401).json({ error: 'Not authenticated' });
+  const player = req.body?.player;
+  if (!player || typeof player !== 'object') return res.status(400).json({ error: 'Player object required' });
+  const all = loadBookmarks();
+  const list = all[email] || [];
+  const key = playerKey(player);
+  if (list.some(p => playerKey(p) === key)) return res.json({ bookmarks: list });
+  list.push(player);
+  all[email] = list;
+  saveBookmarks(all);
+  res.json({ bookmarks: list });
+});
+
+app.delete('/api/bookmarks', (req, res) => {
+  const email = req.signedCookies?.user;
+  if (!email) return res.status(401).json({ error: 'Not authenticated' });
+  const player = req.body?.player;
+  if (!player || typeof player !== 'object') return res.status(400).json({ error: 'Player object required' });
+  const all = loadBookmarks();
+  const list = (all[email] || []).filter(p => playerKey(p) !== playerKey(player));
+  all[email] = list;
+  saveBookmarks(all);
+  res.json({ bookmarks: list });
+});
+
+app.post('/api/bookmarks/remove', (req, res) => {
+  const email = req.signedCookies?.user;
+  if (!email) return res.status(401).json({ error: 'Not authenticated' });
+  const player = req.body?.player;
+  if (!player || typeof player !== 'object') return res.status(400).json({ error: 'Player object required' });
+  const all = loadBookmarks();
+  const list = (all[email] || []).filter(p => playerKey(p) !== playerKey(player));
+  all[email] = list;
+  saveBookmarks(all);
+  res.json({ bookmarks: list });
 });
 
 // Testing bypass — skips Auth0 verification (dev only)
