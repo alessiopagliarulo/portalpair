@@ -55,12 +55,51 @@ document.addEventListener('DOMContentLoaded', async () => {
     return entry?.note || '';
   }
 
+  function syncBookmarkedPlayer(p) {
+    const list = getBookmarks();
+    const key = playerKey(p);
+    const idx = list.findIndex(b => playerKey(b) === key);
+    if (idx < 0) return;
+    const current = list[idx] || {};
+    list[idx] = {
+      ...current,
+      name: (p.name || `${p.firstName || ''} ${p.lastName || ''}`).trim(),
+      firstName: p.firstName || '',
+      lastName: p.lastName || '',
+      team: p.team || '',
+      position: p.position || '',
+      height: p.height,
+      weight: p.weight,
+      overall_rating: p.overall_rating,
+      pred_2026_overall: p.pred_2026_overall,
+      playerClass: p.playerClass || '',
+      docId: p.docId || current.docId || '',
+      athlete_id: p.athlete_id || current.athlete_id || '',
+      season: p.season || current.season || '',
+    };
+    saveBookmarks(list);
+  }
+
   function toggleBookmark(p, btn, card) {
     const list = getBookmarks();
     const key = playerKey(p);
     const idx = list.findIndex(b => playerKey(b) === key);
     const wasBookmarked = idx >= 0;
-    const player = { name: (p.name || `${p.firstName || ''} ${p.lastName || ''}`).trim(), firstName: p.firstName || '', lastName: p.lastName || '', team: p.team || '', position: p.position || '', height: p.height, weight: p.weight, overall_rating: p.overall_rating, playerClass: p.playerClass || '' };
+    const player = {
+      name: (p.name || `${p.firstName || ''} ${p.lastName || ''}`).trim(),
+      firstName: p.firstName || '',
+      lastName: p.lastName || '',
+      team: p.team || '',
+      position: p.position || '',
+      height: p.height,
+      weight: p.weight,
+      overall_rating: p.overall_rating,
+      pred_2026_overall: p.pred_2026_overall,
+      playerClass: p.playerClass || '',
+      docId: p.docId || '',
+      athlete_id: p.athlete_id || '',
+      season: p.season || '',
+    };
     if (wasBookmarked) {
       list.splice(idx, 1);
     } else {
@@ -98,14 +137,18 @@ document.addEventListener('DOMContentLoaded', async () => {
       else if (p.athlete_id && p.team && p.season) viewStatsUrl += '&athlete_id=' + encodeURIComponent(p.athlete_id) + '&season=' + encodeURIComponent(p.season);
       const bookmarked = isBookmarked(p);
       const note = getBookmarkNote(p);
+      if (bookmarked) syncBookmarkedPlayer(p);
       if (bookmarked) card.classList.add('bookmarked');
       const ovr = p.overall_rating != null ? Math.round(p.overall_rating) : null;
       const ovrClass = ovr != null ? (ovr >= 70 ? 'ovr-high' : ovr >= 50 ? 'ovr-mid' : 'ovr-low') : '';
+      const pot = p.pred_2026_overall != null ? Math.round(p.pred_2026_overall) : null;
+      const potClass = pot != null ? (pot >= 70 ? 'pot-high' : pot >= 50 ? 'pot-mid' : 'pot-low') : '';
       card.innerHTML = `
         <div class="player-card-content">
           <div class="player-card-header">
             <h3>${escapeHtml(playerName)}</h3>
             ${ovr != null ? `<span class="ovr-badge ${ovrClass}">${ovr}<span class="ovr-label">OVR</span></span>` : ''}
+            ${pot != null ? `<span class="pot-badge ${potClass}">${pot}<span class="pot-label">POT</span></span>` : ''}
             ${circleHtml}
           </div>
           <div class="meta">

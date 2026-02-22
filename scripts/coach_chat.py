@@ -29,14 +29,17 @@ from scripts.vector_store import COLLECTION, get_vector_store
 
 
 SYSTEM_PROMPT = """You are a college football recruiting assistant. You help coaches find players
-that match their needs. The player list below comes from semantic search—these are the best-matching
-players in the database for the coach's request.
+that match their needs. The player list below comes from the database—either ranked by a specific
+stat/rating or from semantic search based on the coach's description.
+
+OVR = current overall rating (0-100). POT = predicted 2026 potential rating. "change" = POT minus OVR.
 
 When the coach specifies filters (position, weight, height), only players meeting those criteria
 are included. Use this to give precise recommendations.
 
 ALWAYS recommend from the players provided. Never say "no relevant players" or "refine the search."
-Infer fit from position (WR/TE = pass-catchers), height, weight, usage, and team. Be concise and actionable.
+Infer fit from position (WR/TE = pass-catchers), height, weight, stats, and team. Be concise and actionable.
+Reference actual stat values and ratings when relevant.
 
 CRITICAL: Never mention any year or season (e.g. 2024, 2025, 2023) in your response. Do not write "BYU 2024" or similar—use only the team name and player info. Omit year/season entirely."""
 
@@ -66,7 +69,7 @@ def _format_stat(k, v) -> str:
 
 def _collect_stats(payload: dict) -> dict:
     """Extract all stat fields (non-identity keys) from a payload."""
-    return {k: v for k, v in payload.items() if k not in IDENTITY_KEYS and v is not None and v != ""}
+    return {k: v for k, v in payload.items() if k not in IDENTITY_KEYS and not k.startswith("pred_") and v is not None and v != ""}
 
 
 def _format_players_for_llm(results: list) -> str:
@@ -99,6 +102,18 @@ def _format_players_for_llm_from_matches(matches: list) -> str:
         height = m.get("height", "")
         weight = m.get("weight", "")
         parts = [f"{i}. {name} ({pos}) - {team}, Ht:{height} Wt:{weight}"]
+        extras = []
+        if m.get("overall_rating") is not None:
+            extras.append(f"OVR:{m['overall_rating']}")
+        if m.get("pred_2026_overall") is not None:
+            extras.append(f"POT:{m['pred_2026_overall']}")
+            if m.get("overall_rating") is not None:
+                diff = m["pred_2026_overall"] - m["overall_rating"]
+                extras.append(f"change:{'+' if diff >= 0 else ''}{diff}")
+        if m.get("playerClass"):
+            extras.append(f"Class:{m['playerClass']}")
+        if extras:
+            parts.append(f" [{', '.join(extras)}]")
         stats = m.get("stats", {})
         if stats:
             stat_strs = [_format_stat(k, v) for k, v in stats.items()]
@@ -128,6 +143,10 @@ def _results_to_matches(results: list) -> list:
             ovr = int(p.get("overall_rating") or 0)
         except (ValueError, TypeError):
             ovr = None
+        try:
+            pred_ovr = int(p.get("pred_2026_overall") or 0)
+        except (ValueError, TypeError):
+            pred_ovr = None
         match = {
             "name": name or "Unknown",
             "firstName": p.get("firstName", ""),
@@ -141,6 +160,7 @@ def _results_to_matches(results: list) -> list:
             "docId": doc_id,
             "athlete_id": p.get("athlete_id", ""),
             "overall_rating": ovr,
+            "pred_2026_overall": pred_ovr,
             "playerClass": p.get("class", ""),
             "stats": _collect_stats(p),
         }
@@ -190,6 +210,112 @@ def _call_llm(query: str, context: str) -> str:
             return f"Cerebras error: {e}"
 
     return "Add CEREBRAS_API_KEY to .env (https://cloud.cerebras.ai/)"
+
+
+RANKING_PATTERNS = [
+    (r'(?:highest|best|top|greatest)\s+(?:overall|ovr|rated|rating)', 'overall_rating', True),
+    (r'(?:highest|best|top|greatest|most)\s+(?:potential|pot)\b', 'pred_2026_overall', True),
+    (r'(?:biggest|highest|most|largest|greatest)\s+(?:potential\s+)?(?:increase|improvement|growth|jump|gain|upside)', '_pot_increase', True),
+    (r'(?:most\s+improved|improve\s+the\s+most)', '_pot_increase', True),
+    (r'(?:highest|most|best|top)\s+passing\s*(?:yards?|yds?)', 'passing_yards', True),
+    (r'(?:highest|most|best|top)\s+passing\s*(?:tds?|touchdowns?)', 'passing_tds', True),
+    (r'(?:highest|best|top)\s+(?:comp(?:letion)?)\s*(?:pct|percentage|%|rate)', 'completion_pct', True),
+    (r'(?:highest|best|top)\s+(?:yards?\s*per\s*attempt|ypa)', 'yards_per_attempt', True),
+    (r'(?:highest|most|best|top)\s+rushing\s*(?:yards?|yds?)', 'rushing_yards', True),
+    (r'(?:highest|most|best|top)\s+rushing\s*(?:tds?|touchdowns?)', 'rushing_tds', True),
+    (r'(?:highest|best|top)\s+(?:yards?\s*per\s*carry|ypc)', 'yards_per_carry', True),
+    (r'(?:highest|most|best|top)\s+rush(?:ing)?\s*attempts?', 'rushing_attempts', True),
+    (r'(?:highest|most|best|top)\s+(?:receptions?|catches|rec)\b', 'receptions', True),
+    (r'(?:highest|most|best|top)\s+receiving\s*(?:yards?|yds?)', 'receiving_yards', True),
+    (r'(?:highest|best|top)\s+(?:yards?\s*per\s*catch)', 'yards_per_catch', True),
+    (r'(?:highest|most|best|top)\s+receiving\s*(?:tds?|touchdowns?)', 'receiving_tds', True),
+    (r'(?:highest|most|best|top)\s+targets?', 'targets', True),
+    (r'(?:highest|most|best|top)\s+(?:total\s+)?tackles?', '_tackles', True),
+    (r'(?:highest|most|best|top)\s+(?:tfl|tackles?\s*for\s*loss)', 'tfl', True),
+    (r'(?:highest|most|best|top)\s+sacks?\b', 'sacks', True),
+    (r'(?:highest|most|best|top)\s+(?:qb\s*hits?)', 'qb_hits', True),
+    (r'(?:highest|most|best|top)\s+pressures?', 'pressures', True),
+    (r'(?:highest|most|best|top)\s+interceptions?', 'interceptions', True),
+    (r'(?:highest|most|best|top)\s+(?:passes?\s*defended|pass\s*def)', 'passes_defended', True),
+    (r'(?:highest|best|top)\s+(?:field\s*goal|fg)\s*(?:pct|percentage|%)', 'field_goal_pct', True),
+    (r'(?:highest|best|top)\s+(?:punt\s*avg|punt\s*average)', 'punt_average', True),
+    (r'(?:lowest|least|fewest)\s+interceptions?', 'interceptions', False),
+    (r'(?:lowest|least|fewest)\s+sacks?\s*allowed', 'sacks_allowed', False),
+    (r'(?:lowest|least|fewest)\s+penalties', 'penalties', False),
+]
+
+
+def _detect_ranking_query(query: str):
+    """If the query asks for top/bottom players by a stat, return (field, higher_is_better). Else None."""
+    q = query.lower().strip()
+    for pattern, field, higher_is_better in RANKING_PATTERNS:
+        if re.search(pattern, q):
+            return field, higher_is_better
+    return None
+
+
+def _fetch_ranked_players(sort_field: str, ascending: bool = False, position: str | None = None, limit: int = 8) -> list:
+    """Fetch all players from ChromaDB, keep latest season per player, sort by field."""
+    from scripts.config import CHROMA_PERSIST_DIRECTORY
+    import chromadb
+
+    root = Path(__file__).parent.parent
+    p = CHROMA_PERSIST_DIRECTORY
+    if not os.path.isabs(p):
+        p = str((root / p).resolve())
+
+    client = chromadb.PersistentClient(path=p)
+    coll = client.get_collection(COLLECTION)
+    result = coll.get(include=["metadatas"])
+    ids = result.get("ids") or []
+    metadatas = result.get("metadatas") or []
+
+    players = {}
+    for doc_id, meta in zip(ids, metadatas):
+        meta = meta or {}
+        if position:
+            pos = (meta.get("position") or "").strip().upper()
+            if pos != position.upper():
+                continue
+        first = (meta.get("firstName") or "").strip()
+        last = (meta.get("lastName") or "").strip()
+        team = (meta.get("team") or "").strip()
+        key = f"{first} {last}::{team}"
+        try:
+            s_int = int(meta.get("season", 0))
+        except (ValueError, TypeError):
+            s_int = 0
+        if key not in players or s_int > players[key][2]:
+            players[key] = (doc_id, meta, s_int)
+
+    ranked = []
+    for key, (doc_id, meta, _) in players.items():
+        if sort_field == "_pot_increase":
+            try:
+                val = float(meta.get("pred_2026_overall") or 0) - float(meta.get("overall_rating") or 0)
+            except (ValueError, TypeError):
+                val = 0
+        elif sort_field == "_tackles":
+            try:
+                val = max(float(meta.get("total_tackles") or 0), float(meta.get("tackles") or 0))
+            except (ValueError, TypeError):
+                val = 0
+        else:
+            try:
+                val = float(meta.get(sort_field) or 0)
+            except (ValueError, TypeError):
+                val = 0
+        if val == 0 and sort_field not in ("overall_rating", "pred_2026_overall", "_pot_increase"):
+            continue
+        ranked.append({"id": doc_id, "payload": meta, "score": val})
+
+    ranked.sort(key=lambda x: x["score"], reverse=not ascending)
+    top = ranked[:limit]
+    if top:
+        max_val = max(abs(r["score"]) for r in top) or 1
+        for r in top:
+            r["score"] = min(1.0, max(0.0, r["score"] / max_val))
+    return top
 
 
 # Map coach query keywords to CFBD position codes (exact match in DB)
@@ -311,11 +437,24 @@ def _apply_constraints(
 
 
 def chat_with_matches(query: str) -> tuple[str, list]:
+    position_filter = _detect_position_filter(query)
+    ranking = _detect_ranking_query(query)
+
+    if ranking:
+        sort_field, higher_is_better = ranking
+        results = _fetch_ranked_players(
+            sort_field, ascending=not higher_is_better,
+            position=position_filter, limit=8,
+        )
+        matches = _results_to_matches(results)[:8]
+        context = _format_players_for_llm_from_matches(matches)
+        response = _call_llm(query, context)
+        return response, matches
+
     store = get_vector_store()
     model = SentenceTransformer("all-MiniLM-L6-v2")
     query_vec = model.encode([query], convert_to_numpy=True)[0].tolist()
 
-    position_filter = _detect_position_filter(query)
     filter_metadata = {"position": position_filter} if position_filter else None
     min_w, max_w = _detect_weight_constraint(query)
     min_h, max_h = _detect_height_constraint(query)

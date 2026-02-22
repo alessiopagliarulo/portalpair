@@ -36,6 +36,9 @@
     .biodata-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
     .biodata-label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
     .biodata-value { font-size: 1.1rem; font-weight: 600; }
+    .forecast-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 0.25rem; display: flex; align-items: center; gap: 0.5rem; }
+    .forecast-badge { display: inline-block; font-size: 0.65rem; font-weight: 600; padding: 0.2rem 0.5rem; background: #7c3aed; color: white; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.04em; vertical-align: middle; }
+    .forecast-subtitle { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 1rem; }
   </style>
 </head>
 <body class="stat-viewer-page dashboard-page">
@@ -66,6 +69,7 @@
     <div id="biodataArea" class="biodata-section hidden">
       <div class="biodata-grid">
         <div class="biodata-card" id="bioRatingCard" style="display:none;"><span class="biodata-label">Overall Rating</span><span class="biodata-value" id="bioRating">—</span></div>
+        <div class="biodata-card" id="bioPotCard" style="display:none;"><span class="biodata-label">2026 Potential</span><span class="biodata-value" id="bioPot">—</span></div>
         <div class="biodata-card"><span class="biodata-label">Position</span><span class="biodata-value" id="bioPosition">—</span></div>
         <div class="biodata-card" id="bioClassCard" style="display:none;"><span class="biodata-label">Class</span><span class="biodata-value" id="bioClass">—</span></div>
         <div class="biodata-card"><span class="biodata-label">Height</span><span class="biodata-value" id="bioHeight">—</span></div>
@@ -82,6 +86,14 @@
       </div>
       <div class="chart-container">
         <canvas id="statChart"></canvas>
+      </div>
+    </div>
+
+    <div id="forecastArea" class="hidden">
+      <h2 class="forecast-title">2026 Forecast <span class="forecast-badge">PyTorch</span></h2>
+      <p class="forecast-subtitle">Predicted 2026 stats vs 2025 actuals — based on career trend analysis</p>
+      <div class="chart-container">
+        <canvas id="forecastChart"></canvas>
       </div>
     </div>
   </main>

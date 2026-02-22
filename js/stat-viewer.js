@@ -134,6 +134,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   let statChart = null;
+  let forecastChart = null;
   let chartDataCache = null;
   let currentStatDefs = [];
 
@@ -177,10 +178,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       classCard.style.display = 'none';
     }
+
+    const potCard = document.getElementById('bioPotCard');
+    const potEl = document.getElementById('bioPot');
+    if (data.pred_2026_overall != null) {
+      const pot = Math.round(data.pred_2026_overall);
+      potEl.textContent = pot + ' / 100';
+      potCard.style.display = '';
+      const potCls = pot >= 70 ? 'ovr-high' : pot >= 50 ? 'ovr-mid' : 'ovr-low';
+      potEl.className = 'biodata-value ' + potCls;
+    } else {
+      potCard.style.display = 'none';
+    }
   }
 
   function destroyChart() {
     if (statChart) { statChart.destroy(); statChart = null; }
+    if (forecastChart) { forecastChart.destroy(); forecastChart = null; }
   }
 
   function buildDropdown(statDefs) {
@@ -195,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function renderChart() {
     if (!chartDataCache || currentStatDefs.length === 0) return;
-    destroyChart();
+    if (statChart) { statChart.destroy(); statChart = null; }
 
     const selectedKey = statSelect.value;
     const def = currentStatDefs.find(d => d.key === selectedKey) || currentStatDefs[0];
@@ -280,6 +294,84 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   statSelect.addEventListener('change', () => renderChart());
 
+  function buildForecastChart(data) {
+    const forecastArea = document.getElementById('forecastArea');
+    if (forecastChart) { forecastChart.destroy(); forecastChart = null; }
+
+    const predictions = data.predictions_2026 || {};
+    const seasons = data.seasons || [];
+    const position = data.player?.position || '';
+    const group = getStatGroup(position);
+    const statDefs = POSITION_STAT_DEFS[group] || POSITION_STAT_DEFS.Returner;
+
+    const lastSeason = seasons.length > 0 ? seasons[seasons.length - 1] : {};
+    const labels = [];
+    const actual2025 = [];
+    const predicted2026 = [];
+    let hasPredictions = false;
+
+    statDefs.forEach((def) => {
+      const a = lastSeason[def.key];
+      const p = predictions[def.key];
+      if (p != null) {
+        hasPredictions = true;
+        labels.push(def.label);
+        actual2025.push(a != null ? Number(a) : 0);
+        predicted2026.push(Number(p));
+      }
+    });
+
+    if (!hasPredictions) {
+      forecastArea.classList.add('hidden');
+      return;
+    }
+
+    forecastArea.classList.remove('hidden');
+    const ctx = document.getElementById('forecastChart').getContext('2d');
+    forecastChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: '2025 Actual',
+            data: actual2025,
+            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+            borderColor: 'rgb(59, 130, 246)',
+            borderWidth: 1,
+          },
+          {
+            label: '2026 Predicted',
+            data: predicted2026,
+            backgroundColor: 'rgba(139, 92, 246, 0.7)',
+            borderColor: 'rgb(139, 92, 246)',
+            borderWidth: 1,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: true, position: 'top' },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                const v = ctx.raw;
+                if (v == null) return ctx.dataset.label + ': —';
+                return ctx.dataset.label + ': ' + (v % 1 === 0 ? String(v) : v.toFixed(1));
+              },
+            },
+          },
+        },
+        scales: {
+          y: { beginAtZero: true },
+        },
+      },
+    });
+  }
+
   async function loadBiodata() {
     if (!preloadDocId && !(preloadAthleteId && preloadTeam && preloadSeason)) return;
     try {
@@ -313,6 +405,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const q = new URLSearchParams({ player });
       const team = teamInput.value.trim();
       if (team) q.set('team', team);
+      if (preloadDocId) q.set('doc_id', preloadDocId);
+      if (preloadAthleteId) q.set('athlete_id', preloadAthleteId);
+      if (preloadSeason) q.set('season', preloadSeason);
       const res = await fetch(`${API_BASE}/api/player/usage-history?${q}`);
       const data = await res.json();
       showLoading(false);
@@ -322,6 +417,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
       buildCharts(data);
+      buildForecastChart(data);
       if (data.player) {
         renderBiodata(data.player);
         showBiodata(true);

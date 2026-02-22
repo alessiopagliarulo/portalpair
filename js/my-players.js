@@ -89,13 +89,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       const heightStr = p.height ? `${Math.floor(p.height / 12)}'${p.height % 12}"` : '—';
       const weightStr = p.weight ? `${p.weight} lbs` : '—';
       const playerName = p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim();
-      const viewStatsUrl = `stat-viewer.html?player=${encodeURIComponent(playerName)}${p.team ? '&team=' + encodeURIComponent(p.team) : ''}`;
+      let viewStatsUrl = `stat-viewer.html?player=${encodeURIComponent(playerName)}${p.team ? '&team=' + encodeURIComponent(p.team) : ''}`;
+      if (p.docId) viewStatsUrl += '&doc_id=' + encodeURIComponent(p.docId);
+      else if (p.athlete_id && p.team && p.season) {
+        viewStatsUrl += '&athlete_id=' + encodeURIComponent(p.athlete_id) + '&season=' + encodeURIComponent(p.season);
+      }
       const ovr = p.overall_rating != null ? Math.round(p.overall_rating) : null;
       const ovrClass = ovr != null ? (ovr >= 70 ? 'ovr-high' : ovr >= 50 ? 'ovr-mid' : 'ovr-low') : '';
+      const pot = p.pred_2026_overall != null ? Math.round(p.pred_2026_overall) : null;
+      const potClass = pot != null ? (pot >= 70 ? 'pot-high' : pot >= 50 ? 'pot-mid' : 'pot-low') : '';
       card.innerHTML = `
         <div class="player-card-header">
           <h3>${escapeHtml(playerName)}</h3>
           ${ovr != null ? `<span class="ovr-badge ${ovrClass}">${ovr}<span class="ovr-label">OVR</span></span>` : ''}
+          ${pot != null ? `<span class="pot-badge ${potClass}">${pot}<span class="pot-label">POT</span></span>` : ''}
           <button type="button" class="remove-bookmark-btn" title="Remove from My Players">✕</button>
         </div>
         <div class="meta">

@@ -331,6 +331,34 @@
 .ovr-mid  { background: #ca8a04; }
 .ovr-low  { background: #dc2626; }
 
+.pot-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+}
+
+.pot-badge .pot-label {
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  margin-top: 1px;
+}
+
+.pot-high { background: #7c3aed; }
+.pot-mid  { background: #9333ea; }
+.pot-low  { background: #a855f7; }
+
 .hidden { display: none !important; }
 
 .footer-minimal {

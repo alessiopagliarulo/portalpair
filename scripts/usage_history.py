@@ -19,6 +19,7 @@ IDENTITY_KEYS = {
     "athlete_id", "firstName", "lastName", "team", "position",
     "jersey", "height", "weight", "homeCity", "homeState",
     "homeCountry", "season", "text", "_id", "overall_rating", "class",
+    "pred_2026_overall",
 }
 
 
@@ -37,14 +38,23 @@ def _parse_number(v):
 def main():
     player_name = os.environ.get("PLAYER_NAME", "").strip()
     team_filter = os.environ.get("TEAM", "").strip()
+    doc_id = os.environ.get("DOC_ID", "").strip()
+    athlete_id = os.environ.get("ATHLETE_ID", "").strip()
+    season_filter = os.environ.get("SEASON", "").strip()
     for i, arg in enumerate(sys.argv[1:], 1):
         if arg == "--team" and i + 1 < len(sys.argv):
             team_filter = sys.argv[i + 1].strip()
+        elif arg == "--doc-id" and i + 1 < len(sys.argv):
+            doc_id = sys.argv[i + 1].strip()
+        elif arg == "--athlete-id" and i + 1 < len(sys.argv):
+            athlete_id = sys.argv[i + 1].strip()
+        elif arg == "--season" and i + 1 < len(sys.argv):
+            season_filter = sys.argv[i + 1].strip()
         elif not arg.startswith("--") and not player_name:
             player_name = arg.strip()
 
-    if not player_name:
-        print(json.dumps({"error": "Player name required."}), flush=True)
+    if not (player_name or doc_id or (athlete_id and team_filter and season_filter)):
+        print(json.dumps({"error": "Provide player name, doc_id, or athlete_id+team+season."}), flush=True)
         sys.exit(1)
 
     try:
@@ -70,30 +80,57 @@ def main():
     ids = result.get("ids") or []
     metadatas = result.get("metadatas") or []
 
-    search_parts = player_name.lower().split()
-    if not search_parts:
-        print(json.dumps({"error": "Player name required."}), flush=True)
-        sys.exit(1)
-
     matches = []
-    for i, meta in enumerate(metadatas):
-        meta = meta or {}
-        first = (meta.get("firstName") or "").strip()
-        last = (meta.get("lastName") or "").strip()
-        full = f"{first} {last}".strip().lower()
-        team = (meta.get("team") or "").strip()
-        if team_filter and team.lower() != team_filter.lower():
-            continue
-        if not first and not last:
-            continue
-        if full == player_name.lower():
-            matches.append(meta)
-        elif all(part in full for part in search_parts):
-            matches.append(meta)
+    if doc_id:
+        seed = None
+        for row_id, meta in zip(ids, metadatas):
+            if row_id == doc_id:
+                seed = meta or {}
+                break
+        if seed:
+            seed_aid = str(seed.get("athlete_id") or "").strip()
+            seed_team = (seed.get("team") or "").strip().lower()
+            seed_name = f"{(seed.get('firstName') or '').strip()} {(seed.get('lastName') or '').strip()}".strip().lower()
+            for meta in metadatas:
+                meta = meta or {}
+                aid = str(meta.get("athlete_id") or "").strip()
+                team = (meta.get("team") or "").strip().lower()
+                full = f"{(meta.get('firstName') or '').strip()} {(meta.get('lastName') or '').strip()}".strip().lower()
+                if seed_aid and aid and aid == seed_aid and team == seed_team:
+                    matches.append(meta)
+                elif (not seed_aid) and full == seed_name and team == seed_team:
+                    matches.append(meta)
+    elif athlete_id and team_filter and season_filter:
+        team_l = team_filter.lower()
+        for meta in metadatas:
+            meta = meta or {}
+            aid = str(meta.get("athlete_id") or "").strip()
+            team = (meta.get("team") or "").strip().lower()
+            if aid == athlete_id and team == team_l:
+                matches.append(meta)
+    else:
+        search_parts = player_name.lower().split()
+        if not search_parts:
+            print(json.dumps({"error": "Player name required."}), flush=True)
+            sys.exit(1)
+        for meta in metadatas:
+            meta = meta or {}
+            first = (meta.get("firstName") or "").strip()
+            last = (meta.get("lastName") or "").strip()
+            full = f"{first} {last}".strip().lower()
+            team = (meta.get("team") or "").strip()
+            if team_filter and team.lower() != team_filter.lower():
+                continue
+            if not first and not last:
+                continue
+            if full == player_name.lower():
+                matches.append(meta)
+            elif all(part in full for part in search_parts):
+                matches.append(meta)
 
     if not matches:
         print(json.dumps({
-            "player": {"name": player_name, "team": team_filter or None, "position": None},
+            "player": {"name": player_name or None, "team": team_filter or None, "position": None},
             "seasons": [],
             "error": "No data found for this player."
         }), flush=True)
@@ -112,7 +149,7 @@ def main():
         m = by_season[s]
         season_data = {"season": m.get("season")}
         for k, v in m.items():
-            if k not in IDENTITY_KEYS:
+            if k not in IDENTITY_KEYS and not k.startswith("pred_"):
                 parsed = _parse_number(v)
                 if parsed is not None:
                     season_data[k] = parsed
@@ -134,6 +171,19 @@ def main():
         ovr = int(float(ovr)) if ovr is not None else None
     except (ValueError, TypeError):
         ovr = None
+    predictions = {}
+    for k, v in player_info.items():
+        if k.startswith("pred_") and k != "pred_2026_overall":
+            stat_key = k[5:]  # strip "pred_" prefix
+            parsed = _parse_number(v)
+            if parsed is not None:
+                predictions[stat_key] = parsed
+    pred_ovr = player_info.get("pred_2026_overall")
+    try:
+        pred_ovr = int(float(pred_ovr)) if pred_ovr is not None else None
+    except (ValueError, TypeError):
+        pred_ovr = None
+
     out = {
         "player": {
             "name": f"{(player_info.get('firstName') or '').strip()} {(player_info.get('lastName') or '').strip()}".strip(),
@@ -146,8 +196,10 @@ def main():
             "homeState": player_info.get("homeState") or None,
             "homeCountry": player_info.get("homeCountry") or None,
             "overall_rating": ovr,
+            "pred_2026_overall": pred_ovr,
             "class": player_info.get("class") or None,
         },
+        "predictions_2026": predictions,
         "seasons": seasons,
     }
     print(json.dumps(out), flush=True)

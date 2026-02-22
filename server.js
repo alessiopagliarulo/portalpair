@@ -376,13 +376,28 @@ function runPythonScript(script, args = [], envOverrides = {}) {
 app.get('/api/player/usage-history', async (req, res) => {
   const player = (req.query.player || '').trim();
   const team = (req.query.team || '').trim();
-  if (!player) {
-    return res.status(400).json({ error: 'Player name required.' });
+  const docId = (req.query.doc_id || '').trim();
+  const athleteId = (req.query.athlete_id || '').trim();
+  const season = (req.query.season || '').trim();
+  if (!player && !docId && !(athleteId && team && season)) {
+    return res.status(400).json({ error: 'Provide player, doc_id, or athlete_id+team+season.' });
   }
   try {
-    const envOverrides = { PLAYER_NAME: player };
+    const envOverrides = {};
+    if (player) envOverrides.PLAYER_NAME = player;
     if (team) envOverrides.TEAM = team;
-    const { code, out, err } = await runPythonScript('-m', ['scripts.usage_history', player], envOverrides);
+    if (docId) envOverrides.DOC_ID = docId;
+    if (athleteId) envOverrides.ATHLETE_ID = athleteId;
+    if (season) envOverrides.SEASON = season;
+
+    const args = ['scripts.usage_history'];
+    if (player) args.push(player);
+    if (docId) args.push('--doc-id', docId);
+    if (athleteId) args.push('--athlete-id', athleteId);
+    if (team) args.push('--team', team);
+    if (season) args.push('--season', season);
+
+    const { code, out, err } = await runPythonScript('-m', args, envOverrides);
     if (code !== 0) {
       return res.status(500).json({ error: err || out || 'Script failed' });
     }
