@@ -119,6 +119,23 @@
   padding: 0.85rem 1.5rem;
 }
 
+.btn-reset {
+  padding: 0.85rem 1.25rem;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-reset:hover {
+  background: #b91c1c;
+}
+
 .chat-messages-mini {
   margin-top: 1rem;
   min-height: 0;

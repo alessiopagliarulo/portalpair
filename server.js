@@ -430,6 +430,17 @@ app.get('/api/player/profile', async (req, res) => {
   }
 });
 
+app.get('/api/players/list', async (req, res) => {
+  try {
+    const { code, out, err } = await runPythonScript('-m', ['scripts.list_players']);
+    if (code !== 0) return res.status(500).json({ error: err || 'Failed to list players' });
+    const players = JSON.parse(out || '[]');
+    res.json(players);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/db/status', async (req, res) => {
   try {
     const { code, out, err } = await runPythonScript('-m', ['scripts.check_db']);

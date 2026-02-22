@@ -398,4 +398,13 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   chatSend.addEventListener('click', sendCoachMessage);
   chatInput.addEventListener('keydown', (e) => e.key === 'Enter' && sendCoachMessage());
+
+  document.getElementById('resetBtn').addEventListener('click', () => {
+    chatMessages.innerHTML = '';
+    chatInput.value = '';
+    currentMatches = [];
+    showMatches([]);
+    sessionStorage.removeItem(CHAT_HISTORY_KEY);
+    sessionStorage.removeItem(MATCHES_KEY);
+  });
 });

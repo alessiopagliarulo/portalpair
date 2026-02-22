@@ -16,6 +16,10 @@
       <a href="index.html" class="logo"><img src="images/mascot.svg" alt="" class="mascot">Portal<span>Pair</span></a>
       <nav class="nav-dashboard">
         <span id="userEmail" class="user-email"></span>
+        <div class="nav-search-wrapper">
+          <input type="text" id="navPlayerSearch" class="nav-search-input" placeholder="Search player..." autocomplete="off">
+          <div id="navSearchDropdown" class="nav-search-dropdown hidden"></div>
+        </div>
         <a href="dashboard.html" class="btn btn-ghost">Dashboard</a>
         <a href="my-players.html" class="btn btn-ghost nav-active">My Players</a>
         <a href="fan-rankings.html" class="btn btn-ghost">Overall Ranking</a>
@@ -45,6 +49,7 @@
   </main>
 
   <script src="js/auth.js"></script>
+  <script src="js/nav-search.js"></script>
   <script src="js/my-players.js"></script>
 </body>
 </html>

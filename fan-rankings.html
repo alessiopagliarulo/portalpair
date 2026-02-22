@@ -20,6 +20,10 @@
       </nav>
       <nav id="navLoggedIn" class="nav-dashboard" style="display:none;">
         <span id="userEmail" class="user-email"></span>
+        <div class="nav-search-wrapper">
+          <input type="text" id="navPlayerSearch" class="nav-search-input" placeholder="Search player..." autocomplete="off">
+          <div id="navSearchDropdown" class="nav-search-dropdown hidden"></div>
+        </div>
         <a href="dashboard.html" class="btn btn-ghost">Dashboard</a>
         <a href="my-players.html" class="btn btn-ghost">My Players</a>
         <a href="fan-rankings.html" class="btn btn-ghost nav-active">Overall Ranking</a>
@@ -52,6 +56,7 @@
 
   <link rel="stylesheet" href="css/dashboard.css">
   <script src="js/auth.js"></script>
+  <script src="js/nav-search.js"></script>
   <script>
     (function () {
       checkAuth().then(function (user) {
