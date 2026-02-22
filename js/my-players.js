@@ -90,9 +90,12 @@ document.addEventListener('DOMContentLoaded', async () => {
       const weightStr = p.weight ? `${p.weight} lbs` : '—';
       const playerName = p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim();
       const viewStatsUrl = `stat-viewer.html?player=${encodeURIComponent(playerName)}${p.team ? '&team=' + encodeURIComponent(p.team) : ''}`;
+      const ovr = p.overall_rating != null ? Math.round(p.overall_rating) : null;
+      const ovrClass = ovr != null ? (ovr >= 70 ? 'ovr-high' : ovr >= 50 ? 'ovr-mid' : 'ovr-low') : '';
       card.innerHTML = `
         <div class="player-card-header">
           <h3>${escapeHtml(playerName)}</h3>
+          ${ovr != null ? `<span class="ovr-badge ${ovrClass}">${ovr}<span class="ovr-label">OVR</span></span>` : ''}
           <button type="button" class="remove-bookmark-btn" title="Remove from My Players">✕</button>
         </div>
         <div class="meta">

@@ -156,6 +156,18 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.getElementById('bioJersey').textContent = (data.jersey != null && data.jersey !== '') ? '#' + data.jersey : '—';
     const hometownParts = [data.homeCity, data.homeState, data.homeCountry].filter(Boolean);
     document.getElementById('bioHometown').textContent = hometownParts.length ? hometownParts.join(', ') : '—';
+
+    const ratingCard = document.getElementById('bioRatingCard');
+    const ratingEl = document.getElementById('bioRating');
+    if (data.overall_rating != null) {
+      const ovr = Math.round(data.overall_rating);
+      ratingEl.textContent = ovr + ' / 100';
+      ratingCard.style.display = '';
+      const cls = ovr >= 70 ? 'ovr-high' : ovr >= 50 ? 'ovr-mid' : 'ovr-low';
+      ratingEl.className = 'biodata-value ' + cls;
+    } else {
+      ratingCard.style.display = 'none';
+    }
   }
 
   function destroyChart() {

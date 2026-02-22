@@ -18,7 +18,7 @@ os.environ.setdefault("TQDM_DISABLE", "1")
 IDENTITY_KEYS = {
     "athlete_id", "firstName", "lastName", "team", "position",
     "jersey", "height", "weight", "homeCity", "homeState",
-    "homeCountry", "season", "text", "_id",
+    "homeCountry", "season", "text", "_id", "overall_rating",
 }
 
 
@@ -129,6 +129,11 @@ def main():
         wt = int(float(wt)) if wt is not None else None
     except (ValueError, TypeError):
         wt = None
+    ovr = player_info.get("overall_rating")
+    try:
+        ovr = int(float(ovr)) if ovr is not None else None
+    except (ValueError, TypeError):
+        ovr = None
     out = {
         "player": {
             "name": f"{(player_info.get('firstName') or '').strip()} {(player_info.get('lastName') or '').strip()}".strip(),
@@ -140,6 +145,7 @@ def main():
             "homeCity": player_info.get("homeCity") or None,
             "homeState": player_info.get("homeState") or None,
             "homeCountry": player_info.get("homeCountry") or None,
+            "overall_rating": ovr,
         },
         "seasons": seasons,
     }

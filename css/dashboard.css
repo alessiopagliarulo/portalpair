@@ -303,6 +303,34 @@
   margin: 0 auto;
 }
 
+.ovr-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+}
+
+.ovr-badge .ovr-label {
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  margin-top: 1px;
+}
+
+.ovr-high { background: #16a34a; }
+.ovr-mid  { background: #ca8a04; }
+.ovr-low  { background: #dc2626; }
+
 .hidden { display: none !important; }
 
 .footer-minimal {

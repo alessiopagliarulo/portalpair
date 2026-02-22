@@ -44,7 +44,7 @@ CRITICAL: Never mention any year or season (e.g. 2024, 2025, 2023) in your respo
 IDENTITY_KEYS = {
     "athlete_id", "firstName", "lastName", "team", "position",
     "jersey", "height", "weight", "homeCity", "homeState",
-    "homeCountry", "season", "text", "_id",
+    "homeCountry", "season", "text", "_id", "overall_rating",
 }
 
 
@@ -124,6 +124,10 @@ def _results_to_matches(results: list) -> list:
             weight = int(p.get("weight") or 0)
         except (ValueError, TypeError):
             weight = None
+        try:
+            ovr = int(p.get("overall_rating") or 0)
+        except (ValueError, TypeError):
+            ovr = None
         match = {
             "name": name or "Unknown",
             "firstName": p.get("firstName", ""),
@@ -136,6 +140,7 @@ def _results_to_matches(results: list) -> list:
             "season": p.get("season", ""),
             "docId": doc_id,
             "athlete_id": p.get("athlete_id", ""),
+            "overall_rating": ovr,
             "stats": _collect_stats(p),
         }
         matches.append(match)

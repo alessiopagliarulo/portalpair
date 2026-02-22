@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const key = playerKey(p);
     const idx = list.findIndex(b => playerKey(b) === key);
     const wasBookmarked = idx >= 0;
-    const player = { name: (p.name || `${p.firstName || ''} ${p.lastName || ''}`).trim(), firstName: p.firstName || '', lastName: p.lastName || '', team: p.team || '', position: p.position || '', height: p.height, weight: p.weight };
+    const player = { name: (p.name || `${p.firstName || ''} ${p.lastName || ''}`).trim(), firstName: p.firstName || '', lastName: p.lastName || '', team: p.team || '', position: p.position || '', height: p.height, weight: p.weight, overall_rating: p.overall_rating };
     if (wasBookmarked) {
       list.splice(idx, 1);
     } else {
@@ -99,10 +99,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       const bookmarked = isBookmarked(p);
       const note = getBookmarkNote(p);
       if (bookmarked) card.classList.add('bookmarked');
+      const ovr = p.overall_rating != null ? Math.round(p.overall_rating) : null;
+      const ovrClass = ovr != null ? (ovr >= 70 ? 'ovr-high' : ovr >= 50 ? 'ovr-mid' : 'ovr-low') : '';
       card.innerHTML = `
         <div class="player-card-content">
           <div class="player-card-header">
             <h3>${escapeHtml(playerName)}</h3>
+            ${ovr != null ? `<span class="ovr-badge ${ovrClass}">${ovr}<span class="ovr-label">OVR</span></span>` : ''}
             ${circleHtml}
           </div>
           <div class="meta">
