@@ -24,11 +24,14 @@
   </header>
 
   <main class="dashboard-main">
-    <section class="chat-top">
-      <p class="chat-prompt">Describe the player you want — position, play style, program fit. Type it in your own words.</p>
+    <section class="dash-chat-section">
+      <div class="dash-chat-header">
+        <h1 class="dash-chat-title">Find Your Player</h1>
+        <p class="dash-chat-sub">Describe the player you need &mdash; position, play style, physical traits. Our AI searches the database and finds your best matches.</p>
+      </div>
       <div class="chat-bar">
         <input type="text" id="chatInput" placeholder="e.g. Fast RB, smaller program, high YPC..." autofocus>
-        <button id="chatSend" class="btn btn-primary">Find</button>
+        <button id="chatSend" class="btn btn-primary"><span>Find</span></button>
       </div>
       <div id="chatMessages" class="chat-messages-mini"></div>
     </section>
@@ -36,8 +39,8 @@
     <section class="matches-section">
       <h2 class="matches-title">Your matches</h2>
       <div id="matchesGrid" class="matches-grid hidden"></div>
-      <div id="matchesEmpty" class="matches-empty">
-        <span class="matches-empty-icon">★</span>
+      <div id="matchesEmpty" class="dash-empty-state">
+        <div class="dash-empty-icon">&#127944;</div>
         <p>No matches yet. Use the search above to describe the player you're looking for.</p>
       </div>
     </section>
