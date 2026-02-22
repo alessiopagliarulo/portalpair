@@ -161,7 +161,6 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1.25rem;
-  margin-left: 74px;
   transition: border-color 0.2s;
 }
 
@@ -172,7 +171,7 @@
 .player-card-actions {
   display: flex;
   gap: 0.75rem;
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
   flex-wrap: wrap;
 }
 
@@ -288,7 +287,8 @@
 }
 
 .player-note-area {
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0;
 }
 
 .player-note-label {
@@ -324,12 +324,14 @@
 .player-note-saved {
   font-size: 0.75rem;
   color: var(--accent);
-  margin-top: 0.2rem;
+  height: 0;
+  overflow: hidden;
+  transition: height 0.3s, opacity 0.3s;
   opacity: 0;
-  transition: opacity 0.3s;
 }
 
 .player-note-saved.show {
+  height: 1.2em;
   opacity: 1;
 }
 
@@ -614,6 +616,7 @@
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
+  margin-left: 0.75rem;
   padding: 0.2rem 0.55rem;
   border-radius: 6px;
   background: #16a34a;

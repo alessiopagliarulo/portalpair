@@ -91,6 +91,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       docId: p.docId || current.docId || '',
       athlete_id: p.athlete_id || current.athlete_id || '',
       season: p.season || current.season || '',
+      matchPct: p.matchPct != null ? p.matchPct : current.matchPct || null,
     };
     saveBookmarks(list);
   }
@@ -115,6 +116,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       athlete_id: p.athlete_id || '',
       season: p.season || '',
       cost: computePlayerCost(p),
+      matchPct: p.matchPct != null ? p.matchPct : null,
     };
     if (wasBookmarked) {
       list.splice(idx, 1);
@@ -229,18 +231,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       const ovr = p.overall_rating != null ? Math.round(p.overall_rating) : null;
       const ovrClass = ovr != null ? (ovr >= 70 ? 'ovr-high' : ovr >= 50 ? 'ovr-mid' : 'ovr-low') : '';
       const pot = p.pred_2026_overall != null ? Math.round(p.pred_2026_overall) : null;
-      const potClass = pot != null ? (pot >= 70 ? 'pot-high' : pot >= 50 ? 'pot-mid' : 'pot-low') : '';
+      const potClass = pot != null ? (pot >= 70 ? 'ovr-high' : pot >= 50 ? 'ovr-mid' : 'ovr-low') : '';
       const value = computeValueScore(p);
       const valueClass = getRelativeValueClass(value);
       const cost = computePlayerCost(p);
       const costLabel = formatCost(cost);
       card.innerHTML = `
-        <span class="cost-tile" title="Estimated player cost">${costLabel}<span class="cost-label">COST</span></span>
         <div class="player-card-content">
           <div class="player-card-header">
-            <h3>${escapeHtml(playerName)}</h3>
-            ${ovr != null ? `<span class="ovr-badge ovr-star ${ovrClass}">${ovr}<span class="ovr-label">OVR</span></span>` : ''}
-            ${pot != null ? `<span class="pot-badge ${potClass}">${pot}<span class="pot-label">POT</span></span>` : ''}
+            <h3>${escapeHtml(playerName)} ${cost != null ? `<span class="cost-badge" title="Estimated player cost">${costLabel}</span>` : ''}</h3>
+            ${ovr != null ? `<span class="ovr-badge ${ovrClass}">${ovr}<span class="ovr-label">OVR</span></span>` : ''}
+            ${pot != null ? `<span class="ovr-badge ${potClass}">${pot}<span class="ovr-label">POT</span></span>` : ''}
             ${value != null ? `<span class="ovr-badge ${valueClass}" title="Value = Overall / Similarity, adjusted by position">${value}<span class="ovr-label">VAL</span></span>` : ''}
             ${circleHtml}
           </div>
@@ -278,7 +279,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   const budgetInput = document.getElementById('budgetInput');
-  const PLAYER_BUDGET_KEY = 'portal_pair_player_budget';
+  const PLAYER_BUDGET_KEY = 'portal_pair_roster_budget';
   const savedPlayerBudget = localStorage.getItem(PLAYER_BUDGET_KEY);
   if (savedPlayerBudget) budgetInput.value = savedPlayerBudget;
 
