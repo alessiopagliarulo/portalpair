@@ -4,3 +4,5 @@ node_modules/
 .DS_Store
 data/logins.json
 data/bookmarks.json
+scripts/__pycache__/
+.vscode.bak/
