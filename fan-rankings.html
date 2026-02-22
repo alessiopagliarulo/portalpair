@@ -19,9 +19,10 @@
         <a href="login.html" class="btn btn-primary">Login / Sign up</a>
       </nav>
       <nav id="navLoggedIn" class="nav-dashboard" style="display:none;">
+        <span id="userEmail" class="user-email"></span>
         <a href="dashboard.html" class="btn btn-ghost">Dashboard</a>
         <a href="my-players.html" class="btn btn-ghost">My Players</a>
-        <a href="fan-rankings.html" class="btn btn-ghost">Overall Rankings</a>
+        <a href="fan-rankings.html" class="btn btn-ghost nav-active">Overall Ranking</a>
         <button id="logoutBtn" class="btn btn-ghost">Log out</button>
       </nav>
     </div>
@@ -57,6 +58,7 @@
         if (user && user.email) {
           document.getElementById('navPublic').style.display = 'none';
           document.getElementById('navLoggedIn').style.display = '';
+          document.getElementById('userEmail').textContent = user.email;
           var btn = document.getElementById('logoutBtn');
           if (btn) btn.addEventListener('click', function () { logout(); });
         }

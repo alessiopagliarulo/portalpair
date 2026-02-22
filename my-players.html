@@ -17,6 +17,7 @@
       <nav class="nav-dashboard">
         <span id="userEmail" class="user-email"></span>
         <a href="dashboard.html" class="btn btn-ghost">Dashboard</a>
+        <a href="my-players.html" class="btn btn-ghost nav-active">My Players</a>
         <a href="fan-rankings.html" class="btn btn-ghost">Overall Ranking</a>
         <button id="logoutBtn" class="btn btn-ghost">Log out</button>
       </nav>
@@ -26,6 +27,15 @@
   <main class="dashboard-main">
     <h1 class="matches-title">My Players</h1>
     <p class="my-players-desc">Your bookmarked players. Remove any you no longer need.</p>
+
+    <div id="rosterBudgetSection" class="roster-budget-section hidden">
+      <div class="roster-budget-header">
+        <label for="rosterBudgetInput" class="budget-label">Total Roster Budget ($)</label>
+        <input type="text" id="rosterBudgetInput" class="budget-input" placeholder="e.g. 1000000" inputmode="decimal">
+      </div>
+      <div id="rosterProgressArea" class="roster-progress-area"></div>
+    </div>
+
     <div id="bookmarksGrid" class="matches-grid hidden"></div>
     <div id="bookmarksEmpty" class="matches-empty">
       <span class="matches-empty-icon">★</span>

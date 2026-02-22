@@ -63,6 +63,13 @@ body {
   color: var(--accent);
 }
 
+.btn-ghost.nav-active {
+  color: var(--accent);
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+  border-radius: 0;
+}
+
 .logo {
   display: flex;
   align-items: center;
