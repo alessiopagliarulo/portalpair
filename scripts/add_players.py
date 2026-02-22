@@ -1,254 +1,233 @@
 #!/usr/bin/env python3
-"""Add more unique players to the existing database (append mode).
+"""Add 60 LBs and 60 DBs to ChromaDB, and add a 'class' field to every record.
 
-Fetches new players not already in the DB, embeds, and inserts.
-Keeps existing records; adds only new unique players.
-
-Run: python -m scripts.add_players [count]
-Example: python -m scripts.add_players 500
+Run: python -m scripts.add_players
 """
 
+import os
 import random
 import sys
-import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
+os.environ.setdefault("TQDM_DISABLE", "1")
 
-from scripts.config import CHROMA_PERSIST_DIRECTORY, TEAM_LIMIT, PLAYERS_PER_TEAM, FETCH_DELAY, API_CALL_LIMIT
-from scripts.vector_store import (
-    COLLECTION,
-    EMBED_DIM,
-    BATCH_SIZE,
-    _CALLS_PER_TEAM,
-    get_vector_store,
+from scripts.expand_seasons import (
+    SEASONS, POSITION_STATS, ALL_STAT_KEYS,
+    _gen_stats_for_position, _height_variation, _weight_variation,
+    _ht_wt_by_position, _to_text,
 )
 
+BATCH_SIZE = 500
+CLASSES = ["Freshman", "Sophomore", "Junior", "Senior"]
 
-def get_existing_athlete_ids(store) -> set:
-    """Get all athlete_ids already in the collection."""
-    try:
-        coll = store._client.get_collection(COLLECTION)
-    except Exception:
-        return set()
-    result = coll.get(include=["metadatas"])
-    metadatas = result.get("metadatas") or []
-    return {str(m.get("athlete_id", "")) for m in metadatas if m and m.get("athlete_id")}
+FIRST_NAMES = [
+    "James", "Marcus", "Devonte", "Jaylen", "Malik", "Tyrell", "Brandon",
+    "Darius", "Terrell", "Andre", "Chris", "DeShawn", "Khalil", "Jamal",
+    "Trevon", "Isaiah", "Micah", "Cameron", "Jordan", "Donte", "Rashad",
+    "Keion", "Travon", "Zion", "Bryce", "Caleb", "Aaron", "Kobe", "Devin",
+    "Jalen", "Tre", "Markus", "Quincy", "Damien", "Xavier", "Tyson",
+    "Elijah", "Nolan", "Grant", "Colton", "Brock", "Dylan", "Hunter",
+    "Luke", "Austin", "Ryan", "Tyler", "Jake", "Cole", "Mason",
+    "Carson", "Tanner", "Logan", "Garrett", "Payton", "Trace", "Reed",
+    "Drew", "Chase", "Blake", "Owen", "Landon", "Wyatt", "Seth",
+    "Tucker", "Caden", "Knox", "Nash", "Beau", "Tate",
+]
+
+LAST_NAMES = [
+    "Williams", "Johnson", "Brown", "Davis", "Jackson", "Thomas", "Harris",
+    "Robinson", "Lewis", "Walker", "Young", "Allen", "King", "Scott",
+    "Adams", "Baker", "Green", "Carter", "Mitchell", "Turner", "Moore",
+    "Taylor", "Anderson", "White", "Martin", "Thompson", "Garcia", "Clark",
+    "Hill", "Lee", "Wright", "Lopez", "Gonzalez", "Nelson", "Campbell",
+    "Parker", "Evans", "Edwards", "Collins", "Stewart", "Sanders", "Price",
+    "Bennett", "Wood", "Barnes", "Ross", "Henderson", "Coleman", "Jenkins",
+    "Perry", "Powell", "Long", "Patterson", "Hughes", "Washington", "Butler",
+    "Simmons", "Foster", "Bryant", "Jordan", "Russell", "Griffin", "Diaz",
+    "Hayes", "Myers", "Ford", "Hamilton", "Graham", "Sullivan", "Wallace",
+]
+
+CFB_TEAMS = [
+    "Alabama", "Ohio State", "Georgia", "Clemson", "Michigan", "LSU",
+    "Oklahoma", "Texas", "Florida", "Penn State", "Oregon", "Notre Dame",
+    "USC", "Texas A&M", "Auburn", "Wisconsin", "Iowa", "Tennessee",
+    "Miami", "Florida State", "Virginia Tech", "NC State", "UCLA",
+    "Washington", "Utah", "Baylor", "Ole Miss", "Arkansas", "Kentucky",
+    "Oklahoma State", "Stanford", "Colorado", "Arizona State", "Nebraska",
+    "Missouri", "South Carolina", "Pittsburgh", "West Virginia", "TCU",
+    "Minnesota", "Indiana", "Michigan State", "Kansas State", "Wake Forest",
+    "Maryland", "Purdue", "Illinois", "Duke", "Syracuse", "Boston College",
+    "BYU", "Cincinnati", "Memphis", "Houston", "UCF", "Boise State",
+    "San Diego State", "Fresno State", "Air Force", "Army",
+]
+
+DB_SUB_POSITIONS = ["CB", "S", "FS", "SS"]
 
 
-def get_existing_doc_ids(store) -> set:
-    """Get all document IDs in the collection. Used to ensure we never overwrite."""
-    try:
-        coll = store._client.get_collection(COLLECTION)
-        result = coll.get(include=[])
-        return set(result.get("ids") or [])
-    except Exception:
-        return set()
+def _assign_class(season, start_class_idx):
+    """Given a starting class index for 2020, return the class for a given season."""
+    year_offset = SEASONS.index(season) if season in SEASONS else 0
+    idx = min(start_class_idx + year_offset, 3)
+    return CLASSES[idx]
+
+
+def _generate_players(position, count):
+    """Generate `count` unique players at `position` with 6 seasons each."""
+    used_names = set()
+    players = []
+    for _ in range(count):
+        while True:
+            first = random.choice(FIRST_NAMES)
+            last = random.choice(LAST_NAMES)
+            if (first, last) not in used_names:
+                used_names.add((first, last))
+                break
+
+        team = random.choice(CFB_TEAMS)
+        jersey = str(random.randint(1, 99))
+        base_ht, base_wt = _ht_wt_by_position(position)
+        ht0 = base_ht + random.randint(-2, 2)
+        wt0 = base_wt + random.randint(-15, 15)
+        talent = random.uniform(0.55, 1.0)
+        start_class = random.randint(0, 3)
+        city = random.choice(["Atlanta", "Dallas", "Houston", "Miami", "Chicago",
+                              "Los Angeles", "Phoenix", "Charlotte", "Detroit",
+                              "Jacksonville", "Indianapolis", "Memphis", "Nashville",
+                              "New Orleans", "Philadelphia", "Baltimore", "Tampa",
+                              "Denver", "Seattle", "San Antonio", "Columbus",
+                              "Cleveland", "Kansas City", "Minneapolis", "Orlando"])
+        state = random.choice(["GA", "TX", "FL", "CA", "OH", "PA", "NC", "AL",
+                                "LA", "TN", "SC", "VA", "MI", "IL", "AZ", "MD"])
+        aid = f"gen_{position.lower()}_{first.lower()}_{last.lower()}_{random.randint(10000,99999)}"
+
+        for season in SEASONS:
+            stats = _gen_stats_for_position(position, season, talent)
+            ht = _height_variation(ht0, season)
+            wt = _weight_variation(wt0, season)
+            player_class = _assign_class(season, start_class)
+
+            record = {
+                "athlete_id": aid,
+                "season": str(season),
+                "firstName": first,
+                "lastName": last,
+                "team": team,
+                "position": position,
+                "jersey": jersey,
+                "height": ht,
+                "weight": str(wt),
+                "homeCity": city,
+                "homeState": state,
+                "homeCountry": "US",
+                "class": player_class,
+            }
+            for stat_name, val in stats.items():
+                record[stat_name] = str(val)
+
+            doc_id = f"{aid}_{team}_{season}"
+            record["_id"] = doc_id
+            players.append((doc_id, record))
+
+    return players
 
 
 def main():
-    add_count = int(sys.argv[1]) if len(sys.argv) > 1 else 500
+    os.environ.setdefault("HF_HUB_OFFLINE", "1")
+    os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
+    for k in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy", "ALL_PROXY", "all_proxy"):
+        os.environ.pop(k, None)
 
-    print(f"Adding {add_count} unique players to existing database...", flush=True)
-    store = get_vector_store()
-
-    # ChromaDB required for append (Actian has different semantics)
-    if "ChromaDB" not in type(store).__name__:
-        print("Append mode requires ChromaDB. Set USE_CHROMADB=1 in .env")
-        sys.exit(1)
-
-    existing_athlete_ids = get_existing_athlete_ids(store)
-    existing_doc_ids = get_existing_doc_ids(store)
-    print(f"Found {len(existing_athlete_ids)} existing players in DB. Adding new only (no replacing)...", flush=True)
-
-    from scripts.fetch_data import fetch_teams, fetch_players_multi_year, fetch_players_usage_only_multi_year, DEFAULT_YEARS
-
-    teams_data = fetch_teams()
-    teams = [t.get("school") or t.get("team") or t.get("name") for t in teams_data if t]
-    teams = [t for t in teams if t]
-
-    if API_CALL_LIMIT:
-        max_teams = (API_CALL_LIMIT - 1) // _CALLS_PER_TEAM
-        teams = teams[:max_teams]
-
-    # Skip first N teams (likely already in DB); fetch from rest for new players
-    skip_teams = TEAM_LIMIT or 5
-    teams = teams[skip_teams:]
-    print(f"Fetching from {len(teams)} teams (skipped first {skip_teams})...", flush=True)
-
-    seen = {}
-    for i, team in enumerate(teams):
-        if len(seen) >= add_count:
-            break
-        try:
-            players = fetch_players_multi_year(team, years=DEFAULT_YEARS)
-            players_with_usage = [p for p in players if p.get("overall") is not None]
-            if not players_with_usage:
-                players = fetch_players_usage_only_multi_year(team, years=DEFAULT_YEARS)
-            else:
-                players = players_with_usage
-            players = sorted(players, key=lambda p: (p.get("season") or 0), reverse=True)
-            if PLAYERS_PER_TEAM:
-                players = players[:PLAYERS_PER_TEAM]
-            for p in players:
-                aid = str(p.get("athlete_id") or "")
-                if not aid or aid in existing_athlete_ids:
-                    continue
-                existing_athlete_ids.add(aid)  # avoid re-adding in same run
-                prev = seen.get(aid)
-                if prev is None or (p.get("season") or 0) > (prev.get("season") or 0):
-                    seen[aid] = p
-                if len(seen) >= add_count:
-                    break
-            if (i + 1) % 10 == 0 or i == 0:
-                print(f"  [{i+1}/{len(teams)}] {team}: {len(seen)} new", flush=True)
-        except Exception as e:
-            print(f"  [{i+1}/{len(teams)}] {team}: ERROR - {e}", flush=True)
-            if "429" in str(e):
-                break
-        time.sleep(FETCH_DELAY)
-
-    new_players = list(seen.values())[:add_count]
-    if not new_players:
-        print("No new players to add.")
-        return
-
-    def _rand_usage(lo: float = 0.03, hi: float = 0.25) -> float:
-        return round(random.uniform(lo, hi), 4)
-
-    def _fill_missing(p: dict) -> dict:
-        """Fill missing height, weight, jersey, usage with position-based defaults."""
-        pos = (p.get("position") or "Unknown").strip().upper() or "Unknown"
-        _ht_wt = {
-            "QB": (74, 215), "RB": (70, 210), "WR": (72, 195), "TE": (76, 250),
-            "OL": (76, 310), "OT": (76, 310), "OG": (76, 310), "C": (76, 305),
-            "DE": (75, 265), "DT": (75, 300), "NT": (75, 315), "DL": (75, 285),
-            "LB": (73, 235), "CB": (71, 195), "S": (71, 200), "DB": (71, 195),
-            "K": (72, 190), "P": (73, 200),
-        }
-        base_ht, base_wt = _ht_wt.get(pos, _ht_wt.get(pos[:2], (72, 220)))
-        ht = p.get("height")
-        wt = p.get("weight")
-        if ht is None:
-            ht = int(round(base_ht + random.uniform(-2, 2)))
-            ht = max(66, min(80, ht))
-        if wt is None:
-            wt = int(round(base_wt + random.uniform(-20, 25)))
-            wt = max(170, min(350, wt))
-        return {
-            **p,
-            "athlete_id": p.get("athlete_id") or f"{p.get('firstName','')}_{p.get('lastName','')}_{p.get('team','')}_{p.get('season','')}".strip("_") or "unknown",
-            "season": p.get("season") if p.get("season") is not None else 2024,
-            "firstName": (p.get("firstName") or "").strip() or "Unknown",
-            "lastName": (p.get("lastName") or "").strip() or "",
-            "team": (p.get("team") or "").strip() or "Unknown",
-            "position": pos or "N/A",
-            "jersey": p.get("jersey") if p.get("jersey") is not None else str(random.randint(0, 99)),
-            "height": ht,
-            "weight": wt,
-            "homeCity": p.get("homeCity") or "",
-            "homeState": p.get("homeState") or "",
-            "homeCountry": p.get("homeCountry") or "",
-            "overall": p.get("overall") if p.get("overall") is not None else _rand_usage(0.04, 0.35),
-            "pass": p.get("pass") if p.get("pass") is not None else _rand_usage(0.02, 0.45),
-            "rush": p.get("rush") if p.get("rush") is not None else _rand_usage(0.02, 0.30),
-            "firstDown": p.get("firstDown") if p.get("firstDown") is not None else _rand_usage(0.03, 0.30),
-            "secondDown": p.get("secondDown") if p.get("secondDown") is not None else _rand_usage(0.03, 0.28),
-            "thirdDown": p.get("thirdDown") if p.get("thirdDown") is not None else _rand_usage(0.02, 0.25),
-            "standardDowns": p.get("standardDowns") if p.get("standardDowns") is not None else _rand_usage(0.03, 0.30),
-            "passingDowns": p.get("passingDowns") if p.get("passingDowns") is not None else _rand_usage(0.02, 0.40),
-        }
-
-    new_players = [_fill_missing(p) for p in new_players]
-    print(f"Fetched {len(new_players)} new unique players (missing data filled). Generating embeddings...", flush=True)
-
-    def _to_text(p: dict) -> str:
-        parts = [
-            f"{p.get('firstName', '')} {p.get('lastName', '')}".strip(),
-            p.get("position", ""),
-            p.get("team", ""),
-            str(p.get("season", "")),
-            str(p.get("height", "")),
-            str(p.get("weight", "")) + " lbs" if p.get("weight") else "",
-            f"Jersey {p.get('jersey')}" if p.get("jersey") else "",
-        ]
-        u = []
-        if p.get("overall") is not None:
-            u.append(f"usage {p['overall']:.2%}")
-        if p.get("pass") is not None:
-            u.append(f"pass {p['pass']:.2%}")
-        if p.get("rush") is not None:
-            u.append(f"rush {p['rush']:.2%}")
-        if p.get("firstDown") is not None:
-            u.append(f"1st {p['firstDown']:.2%}")
-        if p.get("secondDown") is not None:
-            u.append(f"2nd {p['secondDown']:.2%}")
-        if p.get("thirdDown") is not None:
-            u.append(f"3rd {p['thirdDown']:.2%}")
-        if p.get("standardDowns") is not None:
-            u.append(f"std {p['standardDowns']:.2%}")
-        if p.get("passingDowns") is not None:
-            u.append(f"passDown {p['passingDowns']:.2%}")
-        if u:
-            parts.append(" ".join(u))
-        return " | ".join(x for x in parts if x)
-
-    def _payload(p: dict, text: str, doc_id: str) -> dict:
-        """Build document payload. All fields have values from _fill_missing."""
-        return {
-            "_id": doc_id,
-            "athlete_id": str(p.get("athlete_id", "") or ""),
-            "season": str(p.get("season", "") or ""),
-            "firstName": p.get("firstName") or "Unknown",
-            "lastName": p.get("lastName") or "",
-            "team": p.get("team") or "Unknown",
-            "position": p.get("position") or "N/A",
-            "jersey": str(p.get("jersey") if p.get("jersey") is not None else "0"),
-            "height": p.get("height") if p.get("height") is not None else 72,
-            "weight": str(p.get("weight") if p.get("weight") is not None else 220),
-            "homeCity": p.get("homeCity") or "",
-            "homeState": p.get("homeState") or "",
-            "homeCountry": p.get("homeCountry") or "",
-            "text": text,
-            "overall": f"{float(p.get('overall') or 0):.4f}",
-            "pass": f"{float(p.get('pass') or 0):.4f}",
-            "rush": f"{float(p.get('rush') or 0):.4f}",
-            "firstDown": f"{float(p.get('firstDown') or 0):.4f}",
-            "secondDown": f"{float(p.get('secondDown') or 0):.4f}",
-            "thirdDown": f"{float(p.get('thirdDown') or 0):.4f}",
-            "standardDowns": f"{float(p.get('standardDowns') or 0):.4f}",
-            "passingDowns": f"{float(p.get('passingDowns') or 0):.4f}",
-        }
-
+    from scripts.config import CHROMA_PERSIST_DIRECTORY
+    from scripts.vector_store import COLLECTION
+    import chromadb
     from sentence_transformers import SentenceTransformer
+
+    root = Path(__file__).parent.parent
+    p = CHROMA_PERSIST_DIRECTORY
+    if not os.path.isabs(p):
+        p = str((root / p).resolve())
+
+    print("Loading ChromaDB...", flush=True)
+    client = chromadb.PersistentClient(path=p)
+    coll = client.get_collection(COLLECTION)
+
+    # --- Step 1: Add 'class' to all existing records ---
+    print("Adding 'class' field to existing records...", flush=True)
+    result = coll.get(include=["metadatas"])
+    existing_ids = result.get("ids") or []
+    existing_metas = result.get("metadatas") or []
+
+    player_start_class = {}
+    update_ids = []
+    update_metas = []
+
+    for doc_id, meta in zip(existing_ids, existing_metas):
+        meta = meta or {}
+        first = (meta.get("firstName") or "").strip()
+        last = (meta.get("lastName") or "").strip()
+        team = (meta.get("team") or "").strip()
+        pkey = f"{first}::{last}::{team}"
+
+        if pkey not in player_start_class:
+            player_start_class[pkey] = random.randint(0, 3)
+
+        season = meta.get("season")
+        try:
+            season_int = int(season)
+        except (ValueError, TypeError):
+            season_int = 2020
+        year_offset = SEASONS.index(season_int) if season_int in SEASONS else 0
+        class_idx = min(player_start_class[pkey] + year_offset, 3)
+
+        new_meta = dict(meta)
+        new_meta["class"] = CLASSES[class_idx]
+        update_ids.append(doc_id)
+        update_metas.append(new_meta)
+
+    for i in range(0, len(update_ids), BATCH_SIZE):
+        batch_ids = update_ids[i : i + BATCH_SIZE]
+        batch_metas = update_metas[i : i + BATCH_SIZE]
+        coll.update(ids=batch_ids, metadatas=batch_metas)
+        print(f"  Updated existing {min(i + BATCH_SIZE, len(update_ids))}/{len(update_ids)}", flush=True)
+
+    print(f"Added 'class' to {len(update_ids)} existing records.", flush=True)
+
+    # --- Step 2: Generate new LB and DB players ---
+    print("Generating 60 LBs...", flush=True)
+    lb_records = _generate_players("LB", 60)
+    print("Generating 60 DBs...", flush=True)
+    db_records = _generate_players("CB", 30) + _generate_players("S", 30)
+    all_new = lb_records + db_records
+
+    print(f"Generated {len(all_new)} new records ({len(all_new) // 6} players x 6 seasons).", flush=True)
+
+    # --- Step 3: Generate embeddings for new players ---
+    print("Generating embeddings for new players...", flush=True)
     model = SentenceTransformer("all-MiniLM-L6-v2")
-    texts = [_to_text(p) for p in new_players]
-    ids = [f"{p.get('athlete_id', i)}_{p.get('team', '')}_{p.get('season', '')}" for i, p in enumerate(new_players)]
-    # Exclude any doc id that already exists to guarantee append-only (no replacing)
-    new_mask = [doc_id not in existing_doc_ids for doc_id in ids]
-    new_players = [p for p, keep in zip(new_players, new_mask) if keep]
-    texts = [t for t, keep in zip(texts, new_mask) if keep]
-    ids = [i for i, keep in zip(ids, new_mask) if keep]
-    vectors = model.encode(texts, convert_to_numpy=True, show_progress_bar=bool(texts)).tolist()
-    documents = [_payload(p, t, doc_id) for p, t, doc_id in zip(new_players, texts, ids)]
 
-    if not ids:
-        print("All fetched players already in DB. Nothing to add.")
-        return
+    new_doc_ids = [r[0] for r in all_new]
+    new_records = [r[1] for r in all_new]
+    new_texts = [_to_text(rec) for rec in new_records]
+    new_vectors = model.encode(new_texts, convert_to_numpy=True, show_progress_bar=True).tolist()
 
-    print(f"Inserting {len(ids)} new records (append only) into '{COLLECTION}'...", flush=True)
-    for i in range(0, len(ids), BATCH_SIZE):
-        chunk_ids = ids[i : i + BATCH_SIZE]
-        chunk_docs = documents[i : i + BATCH_SIZE]
-        chunk_vecs = vectors[i : i + BATCH_SIZE]
-        store.insert(COLLECTION, ids=chunk_ids, documents=chunk_docs, vectors=chunk_vecs)
-        n = min(i + BATCH_SIZE, len(ids))
-        print(f"  Inserted {n}/{len(ids)}", flush=True)
+    new_metadatas = []
+    for rec in new_records:
+        m = {k: v for k, v in rec.items() if k != "_id" and v is not None}
+        new_metadatas.append({k: str(v) if not isinstance(v, (int, float, bool)) else v for k, v in m.items()})
 
-    coll = store._client.get_collection(COLLECTION)
+    # --- Step 4: Insert new records ---
+    print("Inserting new players into ChromaDB...", flush=True)
+    for i in range(0, len(new_doc_ids), BATCH_SIZE):
+        batch_ids = new_doc_ids[i : i + BATCH_SIZE]
+        batch_vecs = new_vectors[i : i + BATCH_SIZE]
+        batch_metas = new_metadatas[i : i + BATCH_SIZE]
+        coll.add(ids=batch_ids, embeddings=batch_vecs, metadatas=batch_metas)
+        print(f"  Inserted {min(i + BATCH_SIZE, len(new_doc_ids))}/{len(new_doc_ids)}", flush=True)
+
     total = coll.count()
-    print(f"\nDone. Added {len(ids)} players. Total in DB: {total}")
+    print(f"Done. ChromaDB now has {total} records.", flush=True)
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

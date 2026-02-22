@@ -168,6 +168,15 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       ratingCard.style.display = 'none';
     }
+
+    const classCard = document.getElementById('bioClassCard');
+    const classEl = document.getElementById('bioClass');
+    if (data['class']) {
+      classEl.textContent = data['class'];
+      classCard.style.display = '';
+    } else {
+      classCard.style.display = 'none';
+    }
   }
 
   function destroyChart() {

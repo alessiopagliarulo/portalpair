@@ -18,7 +18,7 @@ os.environ.setdefault("TQDM_DISABLE", "1")
 IDENTITY_KEYS = {
     "athlete_id", "firstName", "lastName", "team", "position",
     "jersey", "height", "weight", "homeCity", "homeState",
-    "homeCountry", "season", "text", "_id", "overall_rating",
+    "homeCountry", "season", "text", "_id", "overall_rating", "class",
 }
 
 
@@ -146,6 +146,7 @@ def main():
             "homeState": player_info.get("homeState") or None,
             "homeCountry": player_info.get("homeCountry") or None,
             "overall_rating": ovr,
+            "class": player_info.get("class") or None,
         },
         "seasons": seasons,
     }

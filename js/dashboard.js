@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const key = playerKey(p);
     const idx = list.findIndex(b => playerKey(b) === key);
     const wasBookmarked = idx >= 0;
-    const player = { name: (p.name || `${p.firstName || ''} ${p.lastName || ''}`).trim(), firstName: p.firstName || '', lastName: p.lastName || '', team: p.team || '', position: p.position || '', height: p.height, weight: p.weight, overall_rating: p.overall_rating };
+    const player = { name: (p.name || `${p.firstName || ''} ${p.lastName || ''}`).trim(), firstName: p.firstName || '', lastName: p.lastName || '', team: p.team || '', position: p.position || '', height: p.height, weight: p.weight, overall_rating: p.overall_rating, playerClass: p.playerClass || '' };
     if (wasBookmarked) {
       list.splice(idx, 1);
     } else {
@@ -111,6 +111,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="meta">
             ${p.team ? `<span>${escapeHtml(p.team)}</span>` : ''}
             ${p.position ? `<span>${escapeHtml(p.position)}</span>` : ''}
+            ${p.playerClass ? `<span>${escapeHtml(p.playerClass)}</span>` : ''}
             <span>Height: ${heightStr}</span>
             <span>Weight: ${weightStr}</span>
           </div>

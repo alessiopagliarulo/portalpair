@@ -101,6 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         <div class="meta">
           ${p.team ? `<span>${escapeHtml(p.team)}</span>` : ''}
           ${p.position ? `<span>${escapeHtml(p.position)}</span>` : ''}
+          ${p.playerClass ? `<span>${escapeHtml(p.playerClass)}</span>` : ''}
           <span>Height: ${heightStr}</span>
           <span>Weight: ${weightStr}</span>
         </div>

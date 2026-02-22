@@ -19,7 +19,7 @@ from scripts.vector_store import COLLECTION, get_vector_store
 IDENTITY_KEYS = {
     "athlete_id", "firstName", "lastName", "team", "position",
     "jersey", "height", "weight", "homeCity", "homeState",
-    "homeCountry", "season", "text", "_id",
+    "homeCountry", "season", "text", "_id", "overall_rating", "class",
 }
 
 

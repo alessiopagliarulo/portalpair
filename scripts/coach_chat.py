@@ -44,7 +44,7 @@ CRITICAL: Never mention any year or season (e.g. 2024, 2025, 2023) in your respo
 IDENTITY_KEYS = {
     "athlete_id", "firstName", "lastName", "team", "position",
     "jersey", "height", "weight", "homeCity", "homeState",
-    "homeCountry", "season", "text", "_id", "overall_rating",
+    "homeCountry", "season", "text", "_id", "overall_rating", "class",
 }
 
 
@@ -141,6 +141,7 @@ def _results_to_matches(results: list) -> list:
             "docId": doc_id,
             "athlete_id": p.get("athlete_id", ""),
             "overall_rating": ovr,
+            "playerClass": p.get("class", ""),
             "stats": _collect_stats(p),
         }
         matches.append(match)
