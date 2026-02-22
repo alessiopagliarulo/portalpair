@@ -272,13 +272,14 @@ app.get('/api/rankings', (req, res) => {
 });
 
 // Database connection check — verify ChromaDB is reachable
-function runPythonScript(script, args = []) {
+function runPythonScript(script, args = [], envOverrides = {}) {
   return new Promise((resolve) => {
     const projectRoot = path.resolve(__dirname);
     const pythonBin = fs.existsSync(path.join(projectRoot, '.venv', 'bin', 'python'))
       ? path.join(projectRoot, '.venv', 'bin', 'python')
       : 'python3';
-    const proc = spawn(pythonBin, [script, ...args], { cwd: projectRoot, env: { ...process.env, PYTHONPATH: projectRoot } });
+    const env = { ...process.env, PYTHONPATH: projectRoot, ...envOverrides };
+    const proc = spawn(pythonBin, [script, ...args], { cwd: projectRoot, env });
     let out = '';
     let err = '';
     proc.stdout.on('data', (d) => { out += d.toString(); });
@@ -286,6 +287,27 @@ function runPythonScript(script, args = []) {
     proc.on('close', (code) => resolve({ code, out: out.trim(), err }));
   });
 }
+
+// Player usage history from ChromaDB (spawns Python scripts/usage_history.py)
+app.get('/api/player/usage-history', async (req, res) => {
+  const player = (req.query.player || '').trim();
+  const team = (req.query.team || '').trim();
+  if (!player) {
+    return res.status(400).json({ error: 'Player name required.' });
+  }
+  try {
+    const envOverrides = { PLAYER_NAME: player };
+    if (team) envOverrides.TEAM = team;
+    const { code, out, err } = await runPythonScript('-m', ['scripts.usage_history', player], envOverrides);
+    if (code !== 0) {
+      return res.status(500).json({ error: err || out || 'Script failed' });
+    }
+    const data = JSON.parse(out || '{}');
+    res.json(data);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
 
 app.get('/api/db/status', async (req, res) => {
   try {

@@ -39,9 +39,11 @@ document.addEventListener('DOMContentLoaded', async () => {
       const circleHtml = pct != null
         ? `<div class="match-circle" style="--pct:${pct}" title="${pct}% match"><span class="match-circle-value">${pct}</span></div>`
         : '';
+      const playerName = p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim();
+      const viewStatsUrl = `stat-viewer.html?player=${encodeURIComponent(playerName)}${p.team ? '&team=' + encodeURIComponent(p.team) : ''}`;
       card.innerHTML = `
         <div class="player-card-header">
-          <h3>${escapeHtml(p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim())}</h3>
+          <h3>${escapeHtml(playerName)}</h3>
           ${circleHtml}
         </div>
         <div class="meta">
@@ -50,6 +52,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <span>Height: ${heightStr}</span>
           <span>Weight: ${weightStr}</span>
         </div>
+        <a href="${viewStatsUrl}" class="view-stats-btn">View Stats</a>
       `;
       matchesGrid.appendChild(card);
     });

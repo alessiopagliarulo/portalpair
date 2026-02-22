@@ -85,6 +85,31 @@ def _format_players_for_llm(results: list) -> str:
     return "\n".join(lines) if lines else "No players found in database."
 
 
+def _format_players_for_llm_from_matches(matches: list) -> str:
+    """Format match dicts for LLM context."""
+    lines = []
+    for i, m in enumerate(matches, 1):
+        name = m.get("name", "").strip()
+        pos = m.get("position", "")
+        team = m.get("team", "")
+        height = m.get("height", "")
+        weight = m.get("weight", "")
+        parts = [f"{i}. {name} ({pos}) - {team}, Ht:{height} Wt:{weight}"]
+        u = []
+        for k, label in [
+            ("overall", "overall"), ("pass", "pass"), ("rush", "rush"),
+            ("firstDown", "1st"), ("secondDown", "2nd"), ("thirdDown", "3rd"),
+            ("standardDowns", "std"), ("passingDowns", "passDown"),
+        ]:
+            v = m.get(k)
+            if v is not None:
+                u.append(f"{label} {_pct(v)}")
+        if u:
+            parts.append(" | usage: " + ", ".join(u))
+        lines.append("".join(parts))
+    return "\n".join(lines) if lines else "No players found in database."
+
+
 def _results_to_matches(results: list) -> list:
     matches = []
     for r in results:
@@ -118,7 +143,28 @@ def _results_to_matches(results: list) -> list:
             "standardDowns": p.get("standardDowns"),
             "passingDowns": p.get("passingDowns"),
         })
-    return matches
+    return _deduplicate_matches(matches)
+
+
+def _deduplicate_matches(matches: list) -> list:
+    """Keep one match per (name, team), preferring highest matchPct then most recent season."""
+    by_key = {}
+    for m in matches:
+        key = (m.get("name") or "").strip(), (m.get("team") or "").strip()
+        if not key[0]:
+            continue
+        prev = by_key.get(key)
+        score = m.get("matchPct") or 0
+        season = m.get("season") or ""
+        keep = prev is None or (
+            score > (prev.get("matchPct") or 0)
+            or (score == (prev.get("matchPct") or 0) and str(season) > str(prev.get("season") or ""))
+        )
+        if keep:
+            by_key[key] = m
+    out = list(by_key.values())
+    out.sort(key=lambda x: ((x.get("matchPct") or 0), str(x.get("season") or "")), reverse=True)
+    return out
 
 
 def _call_llm(query: str, context: str) -> str:
@@ -273,21 +319,21 @@ def chat_with_matches(query: str) -> tuple[str, list]:
     min_h, max_h = _detect_height_constraint(query)
     has_constraints = min_w is not None or max_w is not None or min_h is not None or max_h is not None
 
-    top_k = 40 if has_constraints else 8
+    top_k = 40 if has_constraints else 24
     results = store.search(COLLECTION, query_vec, top_k=top_k, filter_metadata=filter_metadata)
     if not results and filter_metadata:
         results = store.search(COLLECTION, query_vec, top_k=top_k, filter_metadata=None)
 
     results = _apply_constraints(results, min_w, max_w, min_h, max_h)
     if not results and has_constraints:
-        results = store.search(COLLECTION, query_vec, top_k=8, filter_metadata=filter_metadata or None)
-        results = results[:8]
+        results = store.search(COLLECTION, query_vec, top_k=24, filter_metadata=filter_metadata or None)
+        results = results[:24]
     else:
-        results = results[:8]
+        results = results[:24]
 
-    context = _format_players_for_llm(results)
+    matches = _results_to_matches(results)[:8]
+    context = _format_players_for_llm_from_matches(matches)
     response = _call_llm(query, context)
-    matches = _results_to_matches(results)
     return response, matches
 
 
