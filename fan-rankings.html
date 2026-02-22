@@ -36,7 +36,7 @@
         <span class="info-btn-tooltip">Find Out How We Calculate This</span>
       </a>
     </div>
-    <p class="section-subtitle" style="margin-bottom: 1.5rem;">ESPN Top 100 players, 2025 season. Rank 1 is the best. No account needed.</p>
+    <p class="section-subtitle" style="margin-bottom: 1.5rem;">Top 100 players in the 2025 season.</p>
 
     <div id="rankingsHeader" class="results-header">
       <h2>Top 100 — Overall ranking</h2>
@@ -74,16 +74,24 @@
         return div.innerHTML;
       }
 
+      function scoreForRank(rank) {
+        if (rank <= 1) return 99.7;
+        if (rank >= 100) return 86.7;
+        return Math.round((99.7 - (99.7 - 86.7) * (rank - 1) / 99) * 10) / 10;
+      }
+
       function render(players) {
         grid.innerHTML = '';
         countEl.textContent = players.length + ' players';
         players.forEach(function (p) {
+          var score = scoreForRank(p.rank);
+          var scoreStr = Number(score).toFixed(1);
           var card = document.createElement('div');
           card.className = 'player-card';
           card.className = 'player-card player-card-row';
           card.innerHTML =
             '<span class="player-card-rank">#' + escapeHtml(String(p.rank)) + '</span>' +
-            '<span class="player-card-ring"><span>0</span></span>' +
+            '<span class="player-card-ring" style="--pct: ' + score + '%"><span class="player-card-ring-inner">' + scoreStr + '</span></span>' +
             '<span class="player-card-name">' + escapeHtml(p.name) + '</span>' +
             (p.stats ? '<span class="player-card-stats">' + escapeHtml(p.stats) + '</span>' : '');
           grid.appendChild(card);

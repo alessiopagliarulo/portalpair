@@ -343,18 +343,27 @@ body {
   min-width: 2.5rem;
 }
 .player-card-row .player-card-ring {
+  --pct: 0%;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 2.5rem;
+  height: 2.5rem;
   border-radius: 50%;
-  border: 3px solid var(--border);
-  background: var(--bg-card);
+  background: conic-gradient(var(--accent) 0%, var(--accent) var(--pct), var(--border) var(--pct), var(--border) 100%);
   flex-shrink: 0;
-  font-size: 0.7rem;
+}
+.player-card-row .player-card-ring-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  background: var(--bg-card);
+  font-size: 0.65rem;
   font-weight: 600;
-  color: var(--text-muted);
+  color: var(--text);
 }
 .player-card-row .player-card-name {
   font-weight: 600;
