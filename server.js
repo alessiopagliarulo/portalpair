@@ -61,7 +61,7 @@ app.post('/api/auth/send-code', async (req, res) => {
     return res.status(400).json({ error: 'Invalid email' });
   }
   if (!isEduEmail(email)) {
-    return res.status(400).json({ error: 'Only .edu email addresses are accepted.' });
+    return res.status(400).json({ error: "Use your official university email." });
   }
   if (!AUTH0_DOMAIN || !AUTH0_CLIENT_ID || !AUTH0_CLIENT_SECRET) {
     // Fallback: auth works without Auth0 (dev/local). Accept and continue to code step.
@@ -98,7 +98,7 @@ app.post('/api/auth/verify-code', async (req, res) => {
     return res.status(400).json({ error: 'Email and code required' });
   }
   if (!isEduEmail(e)) {
-    return res.status(400).json({ error: 'Only .edu email addresses are accepted.' });
+    return res.status(400).json({ error: "Use your official university email." });
   }
   if (!AUTH0_DOMAIN || !AUTH0_CLIENT_ID || !AUTH0_CLIENT_SECRET) {
     // Fallback: auth works without Auth0. Accept any code and log in.
@@ -155,7 +155,7 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ success: true });
 });
 
-// Bookmarks — per-user persisted across login/logout
+// Bookmarks - per-user persisted across login/logout
 function loadBookmarks() {
   ensureDbDir();
   if (!fs.existsSync(BOOKMARKS_PATH)) return {};
@@ -223,7 +223,7 @@ app.post('/api/bookmarks/remove', (req, res) => {
   res.json({ bookmarks: list });
 });
 
-// Testing bypass — skips Auth0 verification (dev only)
+// Testing bypass - skips Auth0 verification (dev only)
 app.post('/api/auth/bypass', (req, res) => {
   const email = (req.body?.email || 'test@bypass.edu').trim().toLowerCase();
   const addr = email && email.includes('@') ? email : 'test@bypass.edu';
@@ -323,7 +323,7 @@ app.get('/api/player/portal', async (req, res) => {
   }
 });
 
-// ESPN Top 100 rankings (CSV) — 1 = best, sorted ascending
+// ESPN Top 100 rankings (CSV) - 1 = best, sorted ascending
 const RANKINGS_CSV = path.join(__dirname, 'data', 'espn_cfb_top100_players_2025_season.csv');
 function parseRankingsCsv(content) {
   const lines = content.trim().split('\n');
@@ -355,7 +355,7 @@ app.get('/api/rankings', (req, res) => {
   }
 });
 
-// Database connection check — verify ChromaDB is reachable
+// Database connection check - verify ChromaDB is reachable
 function runPythonScript(script, args = [], envOverrides = {}) {
   return new Promise((resolve) => {
     const projectRoot = path.resolve(__dirname);
@@ -440,7 +440,7 @@ app.post('/api/coach/suggest', async (req, res) => {
   const pythonBin = fs.existsSync(path.join(projectRoot, '.venv', 'bin', 'python'))
     ? path.join(projectRoot, '.venv', 'bin', 'python')
     : 'python3';
-  // Run in shell with proxy unset — system proxy causes 403 when sentence-transformers loads cached model
+  // Run in shell with proxy unset - system proxy causes 403 when sentence-transformers loads cached model
   const proxyKeys = ['HTTP_PROXY', 'HTTPS_PROXY', 'http_proxy', 'https_proxy', 'ALL_PROXY', 'all_proxy', 'GIT_HTTP_PROXY', 'GIT_HTTPS_PROXY', 'SOCKS_PROXY', 'SOCKS5_PROXY'];
   const env = { ...process.env, COACH_QUERY: q, TQDM_DISABLE: '1', HF_HUB_OFFLINE: '1', TRANSFORMERS_OFFLINE: '1', PYTHONUNBUFFERED: '1' };
   proxyKeys.forEach(k => delete env[k]);
@@ -462,7 +462,7 @@ app.post('/api/coach/suggest', async (req, res) => {
         matches: []
       });
     }
-    // Extract JSON — coach_chat prints one JSON object; libraries may add other stdout
+    // Extract JSON - coach_chat prints one JSON object; libraries may add other stdout
     let data = null;
     try {
       data = JSON.parse(stdout.trim());

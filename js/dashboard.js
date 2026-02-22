@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
     saveBookmarks(list);
     btn.classList.toggle('added', !wasBookmarked);
-    btn.textContent = !wasBookmarked ? 'In My Players ✓' : 'Add to My Players';
+    btn.textContent = !wasBookmarked ? 'In My Pairs ✓' : 'Add to My Pairs';
     if (card) card.classList.toggle('bookmarked', !wasBookmarked);
   }
 
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function formatCost(cost) {
-    if (cost == null) return '—';
+    if (cost == null) return '-';
     if (cost >= 1000000) return `$${(cost / 1000000).toFixed(2)}M`;
     return `$${Math.round(cost / 1000)}K`;
   }
@@ -173,8 +173,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       card.className = 'player-card';
       card.dataset.matchIndex = String(idx);
       const pct = p.matchPct != null ? Math.round(p.matchPct) : null;
-      const heightStr = p.height ? `${Math.floor(p.height / 12)}'${p.height % 12}"` : '—';
-      const weightStr = p.weight ? `${p.weight} lbs` : '—';
+      const heightStr = p.height ? `${Math.floor(p.height / 12)}'${p.height % 12}"` : '-';
+      const weightStr = p.weight ? `${p.weight} lbs` : '-';
       const circleHtml = pct != null
         ? `<div class="match-circle" style="--pct:${pct}" title="${pct}% Pair Score"><span class="match-circle-value">${pct}%<span class="match-circle-label">Pair Score</span></span></div>`
         : '';
@@ -211,7 +211,7 @@ document.addEventListener('DOMContentLoaded', async () => {
           <div class="budget-bar-container" data-cost="${cost != null ? cost : ''}"></div>
           <div class="player-card-actions">
             <a href="${viewStatsUrl}" class="view-stats-btn">View Stats</a>
-            <button type="button" class="add-to-my-players-btn ${bookmarked ? 'added' : ''}" data-match-idx="${idx}">${bookmarked ? 'In My Players ✓' : 'Add to My Players'}</button>
+            <button type="button" class="add-to-my-players-btn ${bookmarked ? 'added' : ''}" data-match-idx="${idx}">${bookmarked ? 'In My Pairs ✓' : 'Add to My Pairs'}</button>
           </div>
         </div>
       `;
@@ -319,6 +319,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const text = chatInput.value.trim();
     if (!text) return;
 
+    chatSend.querySelector('span').textContent = 'Searching...';
+    chatSend.disabled = true;
+
     const userMsg = document.createElement('div');
     userMsg.className = 'chat-message user';
     userMsg.textContent = text;
@@ -326,7 +329,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     chatInput.value = '';
 
     const assistantMsg = document.createElement('div');
-    assistantMsg.className = 'chat-message assistant';
+    assistantMsg.className = 'chat-message assistant searching';
     assistantMsg.textContent = 'Searching...';
     chatMessages.appendChild(assistantMsg);
     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -338,6 +341,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         body: JSON.stringify({ query: text })
       });
       const data = await res.json();
+      assistantMsg.classList.remove('searching');
       assistantMsg.textContent = data.response || 'Could not get a suggestion.';
 
       if (data.matches && Array.isArray(data.matches) && data.matches.length > 0) {
@@ -345,8 +349,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveMatchesState();
       }
     } catch (err) {
+      assistantMsg.classList.remove('searching');
       assistantMsg.textContent = 'Connection error. Make sure the server is running.';
     }
+    chatSend.querySelector('span').textContent = 'Find';
+    chatSend.disabled = false;
     saveChatState();
     chatMessages.scrollTop = chatMessages.scrollHeight;
   }

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>How We Calculate — Portal Pair</title>
+  <title>How We Calculate | Portal Pair</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -55,7 +55,7 @@
         <p>We fit a regression Ŵ = β<sub>0</sub> + β<sub>1</sub>H (height H in inches, weight W in lbs) by position. For each player we get predicted weight Ŵ, residual r = W<sub>player</sub> − Ŵ, standardized z = r/σ<sub>r</sub>, then:</p>
         <figure class="how-calculate-fig">
           <img src="images/wr_height_weight.png" alt="WR: Height vs Weight scatter plot with linear fit" width="600" height="400">
-          <figcaption>WR: Height vs Weight — regression line shows the typical build; P<sub>phys</sub> measures how close a player is to this profile.</figcaption>
+          <figcaption>WR: Height vs Weight, regression line shows the typical build; P<sub>phys</sub> measures how close a player is to this profile.</figcaption>
         </figure>
         <p class="formula-block">P<sub>phys</sub> = 100 · (1 − |z|/2)</p>
         <p class="text-muted">Higher P<sub>phys</sub> means the player’s build is close to the typical height/weight profile for that position.</p>
@@ -73,7 +73,7 @@
         <p>Volume stats (e.g. receptions, receiving yards, TDs, first downs, explosive catches) normalized by percentiles within position/season. For each period t, we form a production subscore; then we apply exponential decay over time so recent production counts more:</p>
         <figure class="how-calculate-fig">
           <img src="images/pstats_decay.png" alt="Medium exponential decay of game score contribution (λ = 0.1): weight vs time elapsed" width="600" height="400">
-          <figcaption>Exponential decay of game score contribution — recent games count more; at Δt = 10 the weight is ~37%.</figcaption>
+          <figcaption>Exponential decay of game score contribution, recent games count more; at Δt = 10 the weight is ~37%.</figcaption>
         </figure>
         <p class="formula-block">P<sub>stats</sub> = Σ<sub>t</sub> e<sup>−λ<sub>stats</sub>Δt</sup> P<sub>stats,t</sub> / Σ<sub>t</sub> e<sup>−λ<sub>stats</sub>Δt</sup></p>
         <p class="text-muted">Recent catches, yards, and TDs matter more than older production.</p>
@@ -90,7 +90,7 @@
         <p>Increases with age/experience, roughly linear early on, then saturates (e.g. around age 25–27). Modeled with piecewise linear + exponential saturation so experience and readiness are rewarded.</p>
         <figure class="how-calculate-fig">
           <img src="images/page_age_fit.png" alt="Age/Experience Fit Curve (P_age): fit and readiness score vs player age" width="600" height="400">
-          <figcaption>The “Bigger Picture” — P<sub>age</sub>: rapid growth from 18–23, then plateau near max fit by age 27.</figcaption>
+          <figcaption>The “Bigger Picture” , P<sub>age</sub>: rapid growth from 18–23, then plateau near max fit by age 27.</figcaption>
         </figure>
       </section>
 
@@ -111,7 +111,7 @@
   </main>
 
   <footer class="footer">
-    <p>Portal Pair · <a href="index.html" style="color: var(--accent);">Back to home</a></p>
+    <p>Portal Pair · <a href="dashboard.html" style="color: var(--accent);">Back to Portal</a></p>
   </footer>
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Overall Rankings — Portal Pair</title>
+  <title>Overall Rankings | Portal Pair</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,7 +21,7 @@
       <nav id="navLoggedIn" class="nav-dashboard" style="display:none;">
         <span id="userEmail" class="user-email"></span>
         <a href="dashboard.html" class="btn btn-ghost">Dashboard</a>
-        <a href="my-players.html" class="btn btn-ghost">My Players</a>
+        <a href="my-players.html" class="btn btn-ghost">My Pairs</a>
         <a href="fan-rankings.html" class="btn btn-ghost nav-active">Overall Ranking</a>
         <button id="logoutBtn" class="btn btn-ghost">Log out</button>
       </nav>
@@ -36,10 +36,10 @@
         <span class="info-btn-tooltip">Find Out How We Calculate This</span>
       </a>
     </div>
-    <p class="section-subtitle" style="margin-bottom: 1.5rem;">ESPN Top 100 players, 2025 season. Rank 1 is the best. No account needed.</p>
+    <p class="section-subtitle" style="margin-bottom: 1.5rem;">2025 Top 100 players.</p>
 
     <div id="rankingsHeader" class="results-header">
-      <h2>Top 100 — Overall ranking</h2>
+      <h2>Top 100: Overall ranking</h2>
       <p id="rankingsCount" class="results-count"></p>
     </div>
     <div id="loading" class="loading" style="display: none;">Loading rankings…</div>
@@ -47,7 +47,7 @@
   </main>
 
   <footer class="footer">
-    <p>Portal Pair — Overall Rankings · No login required · <a href="index.html" style="color: var(--accent);">Back to home</a></p>
+    <p>Portal Pair | Overall Rankings · No login required · <a href="index.html" style="color: var(--accent);">Back to home</a></p>
   </footer>
 
   <link rel="stylesheet" href="css/dashboard.css">
@@ -74,16 +74,23 @@
         return div.innerHTML;
       }
 
+      function scoreForRank(rank) {
+        if (rank <= 1) return 99.7;
+        if (rank >= 100) return 86.7;
+        return Math.round((99.7 - (99.7 - 86.7) * (rank - 1) / 99) * 10) / 10;
+      }
+
       function render(players) {
         grid.innerHTML = '';
         countEl.textContent = players.length + ' players';
         players.forEach(function (p) {
+          var score = scoreForRank(p.rank);
+          var scoreStr = Number(score).toFixed(1);
           var card = document.createElement('div');
-          card.className = 'player-card';
           card.className = 'player-card player-card-row';
           card.innerHTML =
             '<span class="player-card-rank">#' + escapeHtml(String(p.rank)) + '</span>' +
-            '<span class="player-card-ring"><span>0</span></span>' +
+            '<span class="player-card-ring" style="--pct: ' + score + '"><span class="player-card-ring-inner">' + scoreStr + '</span></span>' +
             '<span class="player-card-name">' + escapeHtml(p.name) + '</span>' +
             (p.stats ? '<span class="player-card-stats">' + escapeHtml(p.stats) + '</span>' : '');
           grid.appendChild(card);

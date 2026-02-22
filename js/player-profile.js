@@ -121,16 +121,16 @@
   }
 
   function escapeHtml(s) {
-    if (s === null || s === undefined) return '—';
+    if (s === null || s === undefined) return '-';
     const div = document.createElement('div');
     div.textContent = String(s);
     return div.innerHTML;
   }
 
   function heightStr(h) {
-    if (h == null || h === '') return '—';
+    if (h == null || h === '') return '-';
     const n = parseInt(h, 10);
-    if (isNaN(n)) return '—';
+    if (isNaN(n)) return '-';
     const ft = Math.floor(n / 12);
     const inch = n % 12;
     return ft + "'" + inch + '"';
@@ -142,9 +142,9 @@
   }
 
   function formatStatValue(v) {
-    if (v === null || v === undefined) return '—';
+    if (v === null || v === undefined) return '-';
     const n = parseFloat(v);
-    if (isNaN(n)) return '—';
+    if (isNaN(n)) return '-';
     if (n === Math.floor(n)) return String(Math.floor(n));
     return n.toFixed(1);
   }
@@ -160,10 +160,10 @@
     document.getElementById('profileMeta').textContent = metaParts.join(' · ');
 
     document.getElementById('bioHeight').textContent = heightStr(data.height);
-    document.getElementById('bioWeight').textContent = data.weight != null ? data.weight + ' lbs' : '—';
-    document.getElementById('bioJersey').textContent = data.jersey != null && data.jersey !== '' ? '#' + data.jersey : '—';
+    document.getElementById('bioWeight').textContent = data.weight != null ? data.weight + ' lbs' : '-';
+    document.getElementById('bioJersey').textContent = data.jersey != null && data.jersey !== '' ? '#' + data.jersey : '-';
     const hometownParts = [data.homeCity, data.homeState, data.homeCountry].filter(Boolean);
-    document.getElementById('bioHometown').textContent = hometownParts.length ? hometownParts.join(', ') : '—';
+    document.getElementById('bioHometown').textContent = hometownParts.length ? hometownParts.join(', ') : '-';
 
     const group = getStatGroup(data.position);
     const statDefs = POSITION_STAT_DEFS[group] || POSITION_STAT_DEFS.Returner;
@@ -183,7 +183,7 @@
     fields.forEach(function (f) {
       const key = f[0];
       const label = f[1];
-      const fmt = f[2] || function (v) { return v != null && v !== '' ? escapeHtml(String(v)) : '—'; };
+      const fmt = f[2] || function (v) { return v != null && v !== '' ? escapeHtml(String(v)) : '-'; };
       const val = data[key];
       const dt = document.createElement('dt');
       dt.textContent = label;
@@ -230,7 +230,7 @@
 
   function renderRankingOnly(rankVal, nameVal, statsVal) {
     document.getElementById('profileName').textContent = nameVal || 'Unknown';
-    document.getElementById('profileMeta').textContent = 'Rank #' + (rankVal || '—') + (statsVal ? ' · ' + statsVal : '');
+    document.getElementById('profileMeta').textContent = 'Rank #' + (rankVal || '-') + (statsVal ? ' · ' + statsVal : '');
 
     const dl = document.getElementById('profileFields');
     dl.innerHTML = '';
@@ -239,7 +239,7 @@
       const dt = document.createElement('dt');
       dt.textContent = r[1];
       const dd = document.createElement('dd');
-      dd.textContent = r[2] != null ? r[2] : '—';
+      dd.textContent = r[2] != null ? r[2] : '-';
       dl.appendChild(dt);
       dl.appendChild(dd);
     });

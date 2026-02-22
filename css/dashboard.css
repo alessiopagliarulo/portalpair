@@ -1,4 +1,4 @@
-/* Dashboard — chat at top, matches below */
+/* Dashboard: chat at top, matches below */
 
 .dashboard-page {
   min-height: 100vh;
@@ -119,16 +119,40 @@
   padding: 0.85rem 1.5rem;
 }
 
+.btn-reset {
+  padding: 0.85rem 1.25rem;
+  background: #dc2626;
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-reset:hover {
+  background: #b91c1c;
+}
+
 .chat-messages-mini {
   margin-top: 1rem;
   min-height: 0;
   max-height: 180px;
   overflow-y: auto;
+  padding-left: 0.25rem;
 }
 
 .chat-messages-mini .chat-message {
-  padding: 0.5rem 0;
+  padding: 0.6rem 0.9rem;
   font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+}
+
+.chat-messages-mini .chat-message.assistant {
+  margin-left: 0.5rem;
 }
 
 .matches-section {
@@ -154,7 +178,6 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: 1.25rem;
-  margin-left: 74px;
   transition: border-color 0.2s;
 }
 
@@ -165,7 +188,7 @@
 .player-card-actions {
   display: flex;
   gap: 0.75rem;
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
   flex-wrap: wrap;
 }
 
@@ -281,7 +304,8 @@
 }
 
 .player-note-area {
-  margin-top: 0.75rem;
+  margin-top: 0.5rem;
+  margin-bottom: 0;
 }
 
 .player-note-label {
@@ -317,12 +341,14 @@
 .player-note-saved {
   font-size: 0.75rem;
   color: var(--accent);
-  margin-top: 0.2rem;
+  height: 0;
+  overflow: hidden;
+  transition: height 0.3s, opacity 0.3s;
   opacity: 0;
-  transition: opacity 0.3s;
 }
 
 .player-note-saved.show {
+  height: 1.2em;
   opacity: 1;
 }
 
@@ -457,7 +483,35 @@
 .ovr-mid  { background: #ca8a04; }
 .ovr-low  { background: #dc2626; }
 
-/* Roster budget section (My Players page) */
+.pot-badge {
+  flex-shrink: 0;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #fff;
+}
+
+.pot-badge .pot-label {
+  font-size: 0.55rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.85;
+  margin-top: 1px;
+}
+
+.pot-high { background: #7c3aed; }
+.pot-mid  { background: #9333ea; }
+.pot-low  { background: #a855f7; }
+
+/* Roster budget section (My Pairs page) */
 .roster-budget-section {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -579,6 +633,7 @@
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
+  margin-left: 0.75rem;
   padding: 0.2rem 0.55rem;
   border-radius: 6px;
   background: #16a34a;
@@ -587,10 +642,64 @@
   font-weight: 700;
   letter-spacing: 0.02em;
 }
-
 .hidden { display: none !important; }
 
 .footer-minimal {
   padding: 1rem 2rem;
   text-align: center;
+}
+
+/* Find Your Pair chat section */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+
+.dash-chat-section {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 2rem 2rem 1.5rem;
+  margin-bottom: 2.5rem;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  animation: fadeInUp 0.4s ease both;
+}
+.dash-chat-header { margin-bottom: 1.25rem; }
+.dash-chat-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin-bottom: 0.35rem;
+}
+.dash-chat-sub {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.chat-messages-mini .chat-message.searching {
+  color: #4ade80;
+  animation: pulse 1.5s ease infinite;
+}
+
+/* --- Empty state (before matches) --- */
+.dash-empty-state {
+  text-align: center;
+  padding: 3.5rem 2rem;
+  background: var(--bg-card);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
+.dash-empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.4;
+}
+.dash-empty-state p {
+  font-size: 0.95rem;
+  color: var(--text-muted);
+  max-width: 400px;
+  margin: 0 auto;
 }

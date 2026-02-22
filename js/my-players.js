@@ -49,13 +49,24 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   function formatCost(cost) {
-    if (cost == null) return '—';
+    if (cost == null) return '-';
     if (cost >= 1000000) return `$${(cost / 1000000).toFixed(2)}M`;
     return `$${Math.round(cost / 1000).toLocaleString()}K`;
   }
 
   function formatDollars(n) {
     return '$' + Math.round(n).toLocaleString();
+  }
+
+  function computeValueScore(player) {
+    const overall = player.overall_rating != null ? Math.round(player.overall_rating) : null;
+    const similarity = player.matchPct != null ? Math.round(player.matchPct) : null;
+    const pos = String(player.position || '').trim().toUpperCase();
+    const isQb = pos === 'QB' || pos === 'QUARTERBACK';
+    const isRb = pos === 'RB' || pos === 'RUNNING BACK';
+    const multiplier = isQb ? 1.4 : isRb ? 1.2 : 1.0;
+    if (overall == null || similarity == null || similarity <= 0) return null;
+    return Number(((overall / similarity) * multiplier).toFixed(2));
   }
 
   function parseBudget() {
@@ -154,9 +165,40 @@ document.addEventListener('DOMContentLoaded', async () => {
     `;
   }
 
+  function updateBudgetBars() {
+    const budget = parseBudget();
+    document.querySelectorAll('.budget-bar-container').forEach(container => {
+      const costStr = container.getAttribute('data-cost');
+      const cost = costStr ? parseFloat(costStr) : null;
+      if (cost == null || budget == null) {
+        container.innerHTML = '';
+        return;
+      }
+      const pct = Math.min((cost / budget) * 100, 100);
+      const isOver = cost > budget;
+      const isClose = cost >= budget * 0.9 && cost <= budget;
+      const barColor = isOver ? '#dc2626' : isClose ? '#ca8a04' : '#16a34a';
+      const label = isOver
+        ? `Over budget by $${Math.round(cost - budget).toLocaleString()}`
+        : cost === budget
+          ? 'Exactly at budget'
+          : `Under budget by $${Math.round(budget - cost).toLocaleString()}`;
+      container.innerHTML = `
+        <div class="budget-bar" title="${label}">
+          <div class="budget-bar-track">
+            <div class="budget-bar-fill" style="width:${pct}%;background:${barColor}"></div>
+            <div class="budget-bar-line" style="left:100%"></div>
+          </div>
+          <span class="budget-bar-label" style="color:${barColor}">${label}</span>
+        </div>
+      `;
+    });
+  }
+
   budgetInput.addEventListener('input', () => {
     localStorage.setItem(ROSTER_BUDGET_KEY, budgetInput.value);
     updateProgressBar();
+    updateBudgetBars();
   });
 
   function loadBookmarks() {
@@ -211,35 +253,52 @@ document.addEventListener('DOMContentLoaded', async () => {
     players.forEach((p) => {
       const card = document.createElement('div');
       card.className = 'player-card bookmarked';
-      const heightStr = p.height ? `${Math.floor(p.height / 12)}'${p.height % 12}"` : '—';
-      const weightStr = p.weight ? `${p.weight} lbs` : '—';
+      const heightStr = p.height ? `${Math.floor(p.height / 12)}'${p.height % 12}"` : '-';
+      const weightStr = p.weight ? `${p.weight} lbs` : '-';
       const playerName = p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim();
-      const viewStatsUrl = `stat-viewer.html?player=${encodeURIComponent(playerName)}${p.team ? '&team=' + encodeURIComponent(p.team) : ''}`;
+      let viewStatsUrl = `stat-viewer.html?player=${encodeURIComponent(playerName)}${p.team ? '&team=' + encodeURIComponent(p.team) : ''}`;
+      if (p.docId) viewStatsUrl += '&doc_id=' + encodeURIComponent(p.docId);
+      else if (p.athlete_id && p.team && p.season) {
+        viewStatsUrl += '&athlete_id=' + encodeURIComponent(p.athlete_id) + '&season=' + encodeURIComponent(p.season);
+      }
       const ovr = p.overall_rating != null ? Math.round(p.overall_rating) : null;
       const ovrClass = ovr != null ? (ovr >= 70 ? 'ovr-high' : ovr >= 50 ? 'ovr-mid' : 'ovr-low') : '';
+      const pot = p.pred_2026_overall != null ? Math.round(p.pred_2026_overall) : null;
+      const potClass = pot != null ? (pot >= 70 ? 'ovr-high' : pot >= 50 ? 'ovr-mid' : 'ovr-low') : '';
       const cost = getPlayerCost(p);
       const costLabel = formatCost(cost);
+      const pct = p.matchPct != null ? Math.round(p.matchPct) : null;
+      const circleHtml = pct != null
+        ? `<div class="match-circle" style="--pct:${pct}" title="${pct}% Pair Score"><span class="match-circle-value">${pct}%<span class="match-circle-label">Pair Score</span></span></div>`
+        : '';
+      const value = computeValueScore(p);
+      const valueClass = value != null ? (value >= 1.5 ? 'ovr-high' : value >= 1 ? 'ovr-mid' : 'ovr-low') : '';
       card.innerHTML = `
-        <div class="player-card-header">
-          <h3>${escapeHtml(playerName)}</h3>
-          ${ovr != null ? `<span class="ovr-badge ${ovrClass}">${ovr}<span class="ovr-label">OVR</span></span>` : ''}
-          <span class="cost-badge">${costLabel}</span>
-          <button type="button" class="remove-bookmark-btn" title="Remove from My Players">✕</button>
-        </div>
-        <div class="meta">
-          ${p.team ? `<span>${escapeHtml(p.team)}</span>` : ''}
-          ${p.position ? `<span>${escapeHtml(p.position)}</span>` : ''}
-          ${p.playerClass ? `<span>${escapeHtml(p.playerClass)}</span>` : ''}
-          <span>Height: ${heightStr}</span>
-          <span>Weight: ${weightStr}</span>
-        </div>
-        <div class="player-note-area">
-          <label class="player-note-label">Coach Notes</label>
-          <textarea class="player-note-input" placeholder="Add your notes about this player...">${escapeHtml(p.note || '')}</textarea>
-          <div class="player-note-saved">Saved</div>
-        </div>
-        <div class="my-players-actions">
-          <a href="${viewStatsUrl}" class="view-stats-btn">View Stats</a>
+        <div class="player-card-content">
+          <div class="player-card-header">
+            <h3>${escapeHtml(playerName)} ${cost != null ? `<span class="cost-badge" title="Estimated player cost">${costLabel}</span>` : ''}</h3>
+            ${ovr != null ? `<span class="ovr-badge ${ovrClass}">${ovr}<span class="ovr-label">OVR</span></span>` : ''}
+            ${pot != null ? `<span class="ovr-badge ${potClass}">${pot}<span class="ovr-label">POT</span></span>` : ''}
+            ${value != null ? `<span class="ovr-badge ${valueClass}" title="Value = Overall / Similarity, adjusted by position">${value}<span class="ovr-label">VAL</span></span>` : ''}
+            ${circleHtml}
+            <button type="button" class="remove-bookmark-btn" title="Remove from My Pairs">✕</button>
+          </div>
+          <div class="meta">
+            ${p.team ? `<span>${escapeHtml(p.team)}</span>` : ''}
+            ${p.position ? `<span>${escapeHtml(p.position)}</span>` : ''}
+            ${p.playerClass ? `<span>${escapeHtml(p.playerClass)}</span>` : ''}
+            <span>Height: ${heightStr}</span>
+            <span>Weight: ${weightStr}</span>
+          </div>
+          <div class="budget-bar-container" data-cost="${cost != null ? cost : ''}"></div>
+          <div class="player-note-area">
+            <label class="player-note-label">Coach Notes</label>
+            <textarea class="player-note-input" placeholder="Add your notes about this player...">${escapeHtml(p.note || '')}</textarea>
+            <div class="player-note-saved">Saved</div>
+          </div>
+          <div class="player-card-actions">
+            <a href="${viewStatsUrl}" class="view-stats-btn">View Stats</a>
+          </div>
         </div>
       `;
       const removeBtn = card.querySelector('.remove-bookmark-btn');
@@ -260,6 +319,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       grid.appendChild(card);
     });
     updateProgressBar();
+    updateBudgetBars();
   }
 
   loadBookmarks();

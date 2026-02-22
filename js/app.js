@@ -58,10 +58,10 @@ function renderPlayers(players) {
     const card = document.createElement('div');
     card.className = 'player-card';
 
-    const heightStr = p.height ? `${Math.floor(p.height / 12)}'${p.height % 12}"` : '—';
-    const weightStr = p.weight ? `${p.weight} lbs` : '—';
+    const heightStr = p.height ? `${Math.floor(p.height / 12)}'${p.height % 12}"` : '-';
+    const weightStr = p.weight ? `${p.weight} lbs` : '-';
 
-    // Simplified PIS placeholder: use height/weight if available, else "—"
+    // Simplified PIS placeholder: use height/weight if available, else "-"
     const pisDisplay = computePISPlaceholder(p);
 
     card.innerHTML = `
@@ -80,7 +80,7 @@ function renderPlayers(players) {
 
 function computePISPlaceholder(p) {
   // Placeholder: real PIS needs S_adj = S_raw × (1 + W_elo) from Elo + season stats
-  if (!p.height && !p.weight) return '—';
+  if (!p.height && !p.weight) return '-';
   let raw = 50;
   if (p.height) raw += Math.min((p.height - 60) * 2, 25);
   if (p.weight) raw += Math.min((p.weight - 180) / 10, 25);

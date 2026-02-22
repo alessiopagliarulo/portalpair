@@ -134,6 +134,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   let statChart = null;
+  let forecastChart = null;
   let chartDataCache = null;
   let currentStatDefs = [];
 
@@ -149,13 +150,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   function renderBiodata(data) {
     const heightStr = data.height != null
       ? (Math.floor(parseInt(data.height, 10) / 12) + "'" + (parseInt(data.height, 10) % 12) + '"')
-      : '—';
-    document.getElementById('bioPosition').textContent = data.position || '—';
+      : '-';
+    document.getElementById('bioPosition').textContent = data.position || '-';
     document.getElementById('bioHeight').textContent = heightStr;
-    document.getElementById('bioWeight').textContent = data.weight != null ? data.weight + ' lbs' : '—';
-    document.getElementById('bioJersey').textContent = (data.jersey != null && data.jersey !== '') ? '#' + data.jersey : '—';
+    document.getElementById('bioWeight').textContent = data.weight != null ? data.weight + ' lbs' : '-';
+    document.getElementById('bioJersey').textContent = (data.jersey != null && data.jersey !== '') ? '#' + data.jersey : '-';
     const hometownParts = [data.homeCity, data.homeState, data.homeCountry].filter(Boolean);
-    document.getElementById('bioHometown').textContent = hometownParts.length ? hometownParts.join(', ') : '—';
+    document.getElementById('bioHometown').textContent = hometownParts.length ? hometownParts.join(', ') : '-';
 
     const ratingCard = document.getElementById('bioRatingCard');
     const ratingEl = document.getElementById('bioRating');
@@ -177,10 +178,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     } else {
       classCard.style.display = 'none';
     }
+
+    const potCard = document.getElementById('bioPotCard');
+    const potEl = document.getElementById('bioPot');
+    if (data.pred_2026_overall != null) {
+      const pot = Math.round(data.pred_2026_overall);
+      potEl.textContent = pot + ' / 100';
+      potCard.style.display = '';
+      const potCls = pot >= 70 ? 'ovr-high' : pot >= 50 ? 'ovr-mid' : 'ovr-low';
+      potEl.className = 'biodata-value ' + potCls;
+    } else {
+      potCard.style.display = 'none';
+    }
   }
 
   function destroyChart() {
     if (statChart) { statChart.destroy(); statChart = null; }
+    if (forecastChart) { forecastChart.destroy(); forecastChart = null; }
   }
 
   function buildDropdown(statDefs) {
@@ -195,7 +209,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   function renderChart() {
     if (!chartDataCache || currentStatDefs.length === 0) return;
-    destroyChart();
+    if (statChart) { statChart.destroy(); statChart = null; }
 
     const selectedKey = statSelect.value;
     const def = currentStatDefs.find(d => d.key === selectedKey) || currentStatDefs[0];
@@ -233,7 +247,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             callbacks: {
               label: function (ctx) {
                 const v = ctx.raw;
-                if (v == null) return def.label + ': —';
+                if (v == null) return def.label + ': -';
                 return def.label + ': ' + (v % 1 === 0 ? String(v) : v.toFixed(1));
               },
             },
@@ -280,6 +294,164 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   statSelect.addEventListener('change', () => renderChart());
 
+  function buildForecastChart(data) {
+    const forecastArea = document.getElementById('forecastArea');
+    if (forecastChart) { forecastChart.destroy(); forecastChart = null; }
+
+    const predictions = data.predictions_2026 || {};
+    const seasons = data.seasons || [];
+    const position = data.player?.position || '';
+    const group = getStatGroup(position);
+    const statDefs = POSITION_STAT_DEFS[group] || POSITION_STAT_DEFS.Returner;
+
+    const lastSeason = seasons.length > 0 ? seasons[seasons.length - 1] : {};
+    const labels = [];
+    const actual2025 = [];
+    const predicted2026 = [];
+    let hasPredictions = false;
+
+    statDefs.forEach((def) => {
+      const a = lastSeason[def.key];
+      const p = predictions[def.key];
+      if (p != null) {
+        hasPredictions = true;
+        labels.push(def.label);
+        actual2025.push(a != null ? Number(a) : 0);
+        predicted2026.push(Number(p));
+      }
+    });
+
+    if (!hasPredictions) {
+      forecastArea.classList.add('hidden');
+      return;
+    }
+
+    forecastArea.classList.remove('hidden');
+    const ctx = document.getElementById('forecastChart').getContext('2d');
+    forecastChart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          {
+            label: '2025 Actual',
+            data: actual2025,
+            backgroundColor: 'rgba(59, 130, 246, 0.7)',
+            borderColor: 'rgb(59, 130, 246)',
+            borderWidth: 1,
+          },
+          {
+            label: '2026 Predicted',
+            data: predicted2026,
+            backgroundColor: 'rgba(139, 92, 246, 0.7)',
+            borderColor: 'rgb(139, 92, 246)',
+            borderWidth: 1,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { display: true, position: 'top' },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) {
+                const v = ctx.raw;
+                if (v == null) return ctx.dataset.label + ': -';
+                return ctx.dataset.label + ': ' + (v % 1 === 0 ? String(v) : v.toFixed(1));
+              },
+            },
+          },
+        },
+        scales: {
+          y: { beginAtZero: true },
+        },
+      },
+    });
+  }
+
+  const BOOKMARKS_KEY = 'portal_pair_my_players';
+  const bookmarkArea = document.getElementById('bookmarkArea');
+  const addToMyPlayersBtn = document.getElementById('addToMyPlayersBtn');
+  let currentPlayerData = null;
+
+  function getBookmarks() {
+    try { return JSON.parse(localStorage.getItem(BOOKMARKS_KEY)) || []; }
+    catch (_) { return []; }
+  }
+  function saveBookmarks(list) { localStorage.setItem(BOOKMARKS_KEY, JSON.stringify(list)); }
+  function playerKey(p) {
+    const name = (p.name || `${p.firstName || ''} ${p.lastName || ''}`).trim();
+    return name + '::' + (p.team || '').trim();
+  }
+
+  function normalizeClass(rawClass) {
+    const cls = String(rawClass || '').trim().toLowerCase();
+    if (!cls) return 'sophomore';
+    if (cls.includes('fresh') || cls === 'fr') return 'freshman';
+    if (cls.includes('soph') || cls === 'so') return 'sophomore';
+    if (cls.includes('jun') || cls === 'jr') return 'junior';
+    if (cls.includes('sen') || cls === 'sr') return 'senior';
+    if (cls.includes('grad')) return 'senior';
+    return cls;
+  }
+  function getClassScore(rawClass) {
+    const cls = normalizeClass(rawClass);
+    return cls === 'freshman' ? 0.0 : cls === 'sophomore' ? 0.33 : cls === 'junior' ? 0.66 : cls === 'senior' ? 1.0 : 0.33;
+  }
+  function getCostRangeByPosition(rawPosition) {
+    const pos = String(rawPosition || '').trim().toUpperCase();
+    if (pos === 'QB' || pos === 'QUARTERBACK') return { min: 50000, max: 600000 };
+    if (pos === 'RB' || pos === 'RUNNING BACK') return { min: 40000, max: 400000 };
+    if (pos === 'WR' || pos === 'WIDE RECEIVER') return { min: 25000, max: 250000 };
+    return { min: 15000, max: 200000 };
+  }
+  function computePlayerCost(p) {
+    const overall = p.overall_rating != null ? Math.round(p.overall_rating) : null;
+    if (overall == null) return null;
+    const { min, max } = getCostRangeByPosition(p.position);
+    const overallNorm = Math.max(0, Math.min(1, (overall - 50) / (600 - 50)));
+    const classNorm = getClassScore(p.playerClass || p['class']);
+    const blendedNorm = Math.max(0, Math.min(1, (overallNorm * 0.85) + (classNorm * 0.15)));
+    return Math.round(min + (max - min) * blendedNorm);
+  }
+
+  function updateBookmarkBtn() {
+    if (!currentPlayerData) { bookmarkArea.classList.add('hidden'); return; }
+    bookmarkArea.classList.remove('hidden');
+    const list = getBookmarks();
+    const key = playerKey(currentPlayerData);
+    const exists = list.some(b => playerKey(b) === key);
+    addToMyPlayersBtn.textContent = exists ? 'In My Pairs ✓' : 'Add to My Pairs';
+    addToMyPlayersBtn.classList.toggle('added', exists);
+  }
+
+  addToMyPlayersBtn.addEventListener('click', () => {
+    if (!currentPlayerData) return;
+    const list = getBookmarks();
+    const key = playerKey(currentPlayerData);
+    const idx = list.findIndex(b => playerKey(b) === key);
+    if (idx >= 0) {
+      list.splice(idx, 1);
+    } else {
+      const p = currentPlayerData;
+      list.push({
+        name: (p.name || `${p.firstName || ''} ${p.lastName || ''}`).trim(),
+        firstName: p.firstName || '', lastName: p.lastName || '',
+        team: p.team || '', position: p.position || '',
+        height: p.height, weight: p.weight,
+        overall_rating: p.overall_rating,
+        pred_2026_overall: p.pred_2026_overall,
+        playerClass: p.playerClass || p['class'] || '',
+        cost: computePlayerCost(p),
+      });
+    }
+    saveBookmarks(list);
+    updateBookmarkBtn();
+  });
+
   async function loadBiodata() {
     if (!preloadDocId && !(preloadAthleteId && preloadTeam && preloadSeason)) return;
     try {
@@ -291,6 +463,8 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (res.ok && data && !data.error) {
         renderBiodata(data);
         showBiodata(true);
+        currentPlayerData = data;
+        updateBookmarkBtn();
       }
     } catch (_) {}
   }
@@ -313,6 +487,9 @@ document.addEventListener('DOMContentLoaded', async () => {
       const q = new URLSearchParams({ player });
       const team = teamInput.value.trim();
       if (team) q.set('team', team);
+      if (preloadDocId) q.set('doc_id', preloadDocId);
+      if (preloadAthleteId) q.set('athlete_id', preloadAthleteId);
+      if (preloadSeason) q.set('season', preloadSeason);
       const res = await fetch(`${API_BASE}/api/player/usage-history?${q}`);
       const data = await res.json();
       showLoading(false);
@@ -322,9 +499,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         return;
       }
       buildCharts(data);
+      buildForecastChart(data);
       if (data.player) {
         renderBiodata(data.player);
         showBiodata(true);
+        currentPlayerData = data.player;
+        updateBookmarkBtn();
       }
     } catch (err) {
       showLoading(false);

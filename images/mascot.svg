@@ -10,9 +10,16 @@
   <!-- Rosy cheeks -->
   <ellipse cx="28" cy="52" rx="6" ry="4" fill="#FFAB91" opacity="0.6"/>
   <ellipse cx="72" cy="52" rx="6" ry="4" fill="#FFAB91" opacity="0.6"/>
-  <!-- American football - ~11:6.7 proportions, saddle brown -->
-  <g transform="translate(68, 78) rotate(-15)">
-    <path d="M-14 0 Q0 -8.5 14 0 Q0 8.5 -14 0 Z" 
-          fill="#8B4513" stroke="#5D3A1A" stroke-width="1"/>
+  <!-- American football with laces and shading -->
+  <g transform="translate(68, 78) rotate(-30)">
+    <path d="M-14 0 Q0 -8.5 14 0 Q0 8.5 -14 0 Z" fill="#6B3410" stroke="#3E1F0A" stroke-width="1"/>
+    <path d="M-13 0 Q0 -7.5 12 -1" fill="none" stroke="#A0612B" stroke-width="0.8" opacity="0.5"/>
+    <line x1="-7" y1="0" x2="7" y2="0" stroke="white" stroke-width="0.9" stroke-linecap="round"/>
+    <line x1="-4" y1="-2.8" x2="-4" y2="2.8" stroke="white" stroke-width="0.7" stroke-linecap="round"/>
+    <line x1="-1.3" y1="-3.4" x2="-1.3" y2="3.4" stroke="white" stroke-width="0.7" stroke-linecap="round"/>
+    <line x1="1.3" y1="-3.4" x2="1.3" y2="3.4" stroke="white" stroke-width="0.7" stroke-linecap="round"/>
+    <line x1="4" y1="-2.8" x2="4" y2="2.8" stroke="white" stroke-width="0.7" stroke-linecap="round"/>
+    <ellipse cx="-11" cy="-1" rx="2" ry="3.5" fill="#7D4417" opacity="0.3"/>
+    <ellipse cx="11" cy="1" rx="2" ry="3.5" fill="#502A0C" opacity="0.3"/>
   </g>
 </svg>

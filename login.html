@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal Pair — Sign In</title>
+  <title>Portal Pair | Sign In</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
-  <meta name="description" content="Portal Pair — Sign in with your .edu email">
+  <meta name="description" content="Portal Pair | Sign in with your university email">
 </head>
 <body class="landing">
   <header class="header">
@@ -20,14 +20,13 @@
 
   <main class="landing-main">
     <h1 class="landing-title">Sign In</h1>
-    <p class="landing-subtitle">Sign in with your .edu email. We'll send you a verification code.</p>
+    <p class="landing-subtitle">Sign in with your university email. We'll send you a verification code.</p>
 
     <div id="stepEmail" class="landing-email-form">
-      <input type="email" id="emailInput" placeholder="you@university.edu" autocomplete="email" />
+      <input type="email" id="emailInput" placeholder="coach@university.edu" autocomplete="email" />
       <p id="emailError" class="email-error hidden"></p>
       <div class="verify-row">
         <button type="button" id="sendCodeBtn" class="btn btn-primary btn-lg">Send verification code</button>
-        <button type="button" id="bypassEmailBtn" class="btn btn-ghost btn-lg">Bypass (testing)</button>
       </div>
     </div>
 
@@ -37,15 +36,14 @@
       <p id="codeError" class="email-error hidden"></p>
       <div class="verify-row">
         <button type="button" id="verifyBtn" class="btn btn-primary btn-lg">Verify & sign in</button>
-        <button type="button" id="bypassBtn" class="btn btn-ghost btn-lg">Bypass (testing)</button>
       </div>
     </div>
 
-    <p class="landing-note">Only .edu emails accepted. Auth0 2FA via email code.</p>
+    <p class="landing-note">Use your official university email. 2FA via email code.</p>
   </main>
 
   <footer class="footer">
-    <p>Portal Pair — Hackalytics 2026</p>
+    <p>Portal Pair | Hackalytics 2026</p>
   </footer>
 
   <script src="js/auth.js"></script>

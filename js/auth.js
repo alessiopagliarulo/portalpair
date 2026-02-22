@@ -1,4 +1,4 @@
-// Auth0 2FA - email verification code
+// 2FA - email verification code
 
 async function sendCode(email) {
   const res = await fetch('/api/auth/send-code', {

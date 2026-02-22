@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Portal Pair — Coach Dashboard</title>
+  <title>Portal Pair | Coach Dashboard</title>
   <link rel="stylesheet" href="css/styles.css">
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,8 +16,12 @@
       <a href="index.html" class="logo"><img src="images/mascot.svg" alt="" class="mascot">Portal<span>Pair</span></a>
       <nav class="nav-dashboard">
         <span id="userEmail" class="user-email"></span>
+        <div class="nav-search-wrapper">
+          <input type="text" id="navPlayerSearch" class="nav-search-input" placeholder="Search player..." autocomplete="off">
+          <div id="navSearchDropdown" class="nav-search-dropdown hidden"></div>
+        </div>
         <a href="dashboard.html" class="btn btn-ghost nav-active">Dashboard</a>
-        <a href="my-players.html" class="btn btn-ghost">My Players</a>
+        <a href="my-players.html" class="btn btn-ghost">My Pairs</a>
         <a href="fan-rankings.html" class="btn btn-ghost">Overall Ranking</a>
         <button id="logoutBtn" class="btn btn-ghost">Log out</button>
       </nav>
@@ -25,15 +29,19 @@
   </header>
 
   <main class="dashboard-main">
-    <section class="chat-top">
+    <section class="dash-chat-section">
+      <div class="dash-chat-header">
+        <h1 class="dash-chat-title">Find Your <span class="hero-accent">Pair</span></h1>
+        <p class="dash-chat-sub">Describe the player you need: position, play style, physical traits. Our AI searches the database and finds your best matches.</p>
+      </div>
       <div class="budget-row">
-        <label for="budgetInput" class="budget-label">Coach Budget ($)</label>
+        <label for="budgetInput" class="budget-label">Total Roster Budget ($)</label>
         <input type="text" id="budgetInput" class="budget-input" placeholder="e.g. 250000" inputmode="decimal">
       </div>
-      <p class="chat-prompt">Describe the player you want — position, play style, program fit. Type it in your own words.</p>
       <div class="chat-bar">
         <input type="text" id="chatInput" placeholder="e.g. Fast RB, smaller program, high YPC..." autofocus>
-        <button id="chatSend" class="btn btn-primary">Find</button>
+        <button id="chatSend" class="btn btn-primary"><span>Find</span></button>
+        <button id="resetBtn" class="btn btn-reset" title="Reset dashboard">Reset</button>
       </div>
       <div id="chatMessages" class="chat-messages-mini"></div>
     </section>
@@ -41,8 +49,8 @@
     <section class="matches-section">
       <h2 class="matches-title">Your matches</h2>
       <div id="matchesGrid" class="matches-grid hidden"></div>
-      <div id="matchesEmpty" class="matches-empty">
-        <span class="matches-empty-icon">★</span>
+      <div id="matchesEmpty" class="dash-empty-state">
+        <div class="dash-empty-icon">&#127944;</div>
         <p>No matches yet. Use the search above to describe the player you're looking for.</p>
       </div>
     </section>
@@ -53,6 +61,7 @@
   </footer>
 
   <script src="js/auth.js"></script>
+  <script src="js/nav-search.js"></script>
   <script src="js/dashboard.js"></script>
 </body>
 </html>
