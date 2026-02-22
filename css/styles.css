@@ -194,6 +194,63 @@ body {
   margin-left: auto;
   margin-right: auto;
 }
+.how-calculate-content {
+  padding: 1.5rem;
+  max-width: 100%;
+}
+.how-calculate-content .how-intro {
+  margin-bottom: 1.5rem;
+  color: var(--text-muted, #555);
+}
+.how-calculate-content h2 {
+  font-size: 1.2rem;
+  margin-top: 1.75rem;
+  margin-bottom: 0.5rem;
+  color: var(--text, #1a1a1a);
+}
+.how-calculate-content h3 {
+  font-size: 1.05rem;
+  margin-top: 1.25rem;
+  margin-bottom: 0.35rem;
+}
+.how-calculate-content .formula-block {
+  font-family: var(--font-mono, "IBM Plex Mono", monospace);
+  background: rgba(0,0,0,0.05);
+  padding: 0.6rem 0.85rem;
+  border-radius: 6px;
+  margin: 0.5rem 0 0.75rem;
+  font-size: 0.9rem;
+  overflow-x: auto;
+}
+.how-calculate-content .score-section {
+  margin-bottom: 0.5rem;
+}
+.how-calculate-content .how-calculate-fig {
+  margin: 1rem 0;
+  text-align: center;
+}
+.how-calculate-content .how-calculate-fig img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto;
+}
+.how-calculate-content .how-calculate-fig figcaption {
+  font-size: 0.9rem;
+  color: var(--text-muted, #555);
+  margin-top: 0.5rem;
+}
+.how-calculate-content .text-muted {
+  color: var(--text-muted, #555);
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+.how-calculate-content .how-outro {
+  margin-top: 1.5rem;
+  margin-bottom: 0;
+}
 
 .rankings-title-row {
   display: flex;
