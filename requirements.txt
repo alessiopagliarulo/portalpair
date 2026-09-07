@@ -1,14 +1,25 @@
-# College Football Analytics Pipeline - Hackalytics 2026
+# Portal Pair — Python data pipeline
+# Targets Python 3.12 (see .python-version). Newer versions are untested.
+
 requests>=2.31.0
-sentence-transformers>=2.2.0
 python-dotenv>=1.0.0
 
-# Actian VectorAI DB - https://github.com/hackmamba-io/actian-vectorAI-db-beta
-actiancortex @ https://github.com/hackmamba-io/actian-vectorAI-db-beta/raw/main/actiancortex-0.1.0b1-py3-none-any.whl
+# Embeddings for the vector store (all-MiniLM-L6-v2). Pulls in torch, but
+# torch is pinned explicitly below because scripts/forecast_2026.py imports
+# it directly.
+sentence-transformers>=2.2.0
+torch>=2.0.0
 
-# ChromaDB - local backup when Actian VectorAI is unavailable
+# Vector store. ChromaDB is the default (config.py: USE_CHROMADB=1).
 chromadb>=0.4.0
-pydantic-settings>=2.0.0  # required for ChromaDB on Python 3.14+
+pydantic-settings>=2.0.0  # ChromaDB's settings loader depends on this
 
-# Coach chatbot LLM
+# Coach chatbot LLM (optional — without a CEREBRAS_API_KEY the chat endpoint
+# returns a plain message instead of an LLM answer).
 cerebras-cloud-sdk>=0.1.0
+
+# OPTIONAL — Actian VectorAI DB, the alternative vector backend used when
+# USE_CHROMADB=0. The beta wheel this was pinned to now returns 404, so the
+# line is commented out and the project runs on ChromaDB instead. If the
+# wheel comes back, uncomment it:
+# actiancortex @ https://github.com/hackmamba-io/actian-vectorAI-db-beta/raw/main/actiancortex-0.1.0b1-py3-none-any.whl
