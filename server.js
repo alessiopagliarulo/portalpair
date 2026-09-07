@@ -536,7 +536,7 @@ app.post('/api/coach/suggest', async (req, res) => {
 
 app.listen(PORT, () => {
   ensureDbDir();
-  console.log(`\n  ScoutBase running at http://localhost:${PORT}`);
+  console.log(`\n  Portal Pair running at http://localhost:${PORT}`);
   const auth0Ok = AUTH0_DOMAIN && AUTH0_CLIENT_ID && AUTH0_CLIENT_SECRET;
   console.log(auth0Ok ? '  Auth0: ENABLED (2FA email code)' : '  Auth0: add AUTH0_* to .env');
   console.log('');
