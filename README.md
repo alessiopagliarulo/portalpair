@@ -162,11 +162,11 @@ Four people, 48 hours. GitHub's contributor list omits Kriti entirely: she commi
 | | Owned |
 |---|---|
 | **Alessio Pagliarulo** ([@ApagPlayz](https://github.com/ApagPlayz)) | Analytics engine and integration — season expansion, the ratings model (`compute_ratings.py`), the PyTorch 2026 forecaster, the stat viewer, the coach dashboard and My Players UI, and merging everyone's branches. 24 commits. |
-| **senrianath** ([@senrianath](https://github.com/senrianath)) | Foundation and visual identity — initial Express setup, Auth0 authentication, the landing page, the design system in `css/styles.css`, the player-profile dashboard. 16 commits. |
-| **Edy Tapu** ([@EdyTapu](https://github.com/EdyTapu)) | Rankings and methodology — `fan-rankings.html`, the ESPN Top-100 pipeline, and `how-we-calculate.html` including the three equation plots. 12 commits. |
-| **Kriti Kumaran** | Data and retrieval layer — the CFBD client (`fetch_data.py`), the vector store abstraction (`vector_store.py`), player generation (`add_players.py`), and the RAG coach chatbot (`coach_chat.py`). 10 commits. |
+| **senrianath** ([@senrianath](https://github.com/senrianath)) | Foundation and visual identity — initial Express setup, Auth0 authentication, the landing page, the design system in `css/styles.css`, the player-profile dashboard. 12 commits. |
+| **Edy Tapu** ([@EdyTapu](https://github.com/EdyTapu)) | Rankings and methodology — `fan-rankings.html`, the ESPN Top-100 pipeline, and `how-we-calculate.html` including the three equation plots. 9 commits. |
+| **Kriti Kumaran** | Data and retrieval layer — the CFBD client (`fetch_data.py`), the vector store abstraction (`vector_store.py`), player generation (`add_players.py`), and the RAG coach chatbot (`coach_chat.py`). 9 commits. |
 
-**On AI assistance:** 42 of the 62 commits carry a `Co-authored-by: Cursor` trailer. This project was written with heavy AI pair-programming, and the trailers are left in the history deliberately rather than scrubbed. The architecture decisions, the scoring model, and the debugging were ours; a lot of the typing was not.
+**On AI assistance:** 37 of the 54 hackathon commits on `main` carry a `Co-authored-by: Cursor` trailer. This project was written with heavy AI pair-programming, and the trailers are left in the history deliberately rather than scrubbed. The architecture decisions, the scoring model, and the debugging were ours; a lot of the typing was not.
 
 ---
 
