@@ -1,8 +1,19 @@
 node_modules/
+.venv/
+venv/
+
 .env
 *.log
 .DS_Store
+
 data/logins.json
 data/bookmarks.json
+
+__pycache__/
+*.pyc
 scripts/__pycache__/
 .vscode.bak/
+
+# NOTE: chroma_backup/ is deliberately NOT ignored. It is the app's only
+# data store and there is no script that rebuilds it from scratch, so it
+# has to stay committed. See "Known rough edges" in README.md.
