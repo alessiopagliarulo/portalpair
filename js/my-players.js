@@ -1,12 +1,7 @@
 const BOOKMARKS_KEY = 'portal_pair_my_players';
 
 document.addEventListener('DOMContentLoaded', async () => {
-  let user = null;
-  if (sessionStorage.getItem('testBypass')) {
-    user = { email: 'test@bypass.edu' };
-  } else {
-    user = await checkAuth?.();
-  }
+  const user = await checkAuth?.();
   if (!user?.email && typeof checkAuth === 'function') {
     window.location.href = 'login.html';
     return;
