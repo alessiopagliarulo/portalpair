@@ -6,13 +6,26 @@ const fs = require('fs');
 const fetch = require('node-fetch');
 const cookieParser = require('cookie-parser');
 
+// Required configuration comes from the environment only. Copy .env.example to .env
+// and fill in real values; the server refuses to boot with anything missing.
+function requireEnv(name) {
+  const value = process.env[name];
+  if (!value) {
+    throw new Error(
+      `Missing required environment variable ${name}. ` +
+      `Copy .env.example to .env and set ${name} before starting the server.`
+    );
+  }
+  return value;
+}
+
 const app = express();
 const PORT = process.env.PORT || 8080;
 const CFB_API = 'https://api.collegefootballdata.com';
 const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN;
 const AUTH0_CLIENT_ID = process.env.AUTH0_CLIENT_ID;
 const AUTH0_CLIENT_SECRET = process.env.AUTH0_CLIENT_SECRET;
-const COOKIE_SECRET = process.env.COOKIE_SECRET || 'REDACTED_DEV_COOKIE_SECRET';
+const COOKIE_SECRET = requireEnv('COOKIE_SECRET');
 const DB_PATH = path.join(__dirname, 'data', 'logins.json');
 const BOOKMARKS_PATH = path.join(__dirname, 'data', 'bookmarks.json');
 
@@ -20,7 +33,7 @@ app.use(express.json());
 app.use(cookieParser(COOKIE_SECRET));
 app.use(express.static(path.join(__dirname)));
 
-const API_KEY = process.env.CFB_API_KEY || 'REDACTED_CFBD_API_KEY_ROTATED';
+const API_KEY = requireEnv('CFB_API_KEY');
 
 function ensureDbDir() {
   const dir = path.dirname(DB_PATH);
@@ -223,20 +236,24 @@ app.post('/api/bookmarks/remove', (req, res) => {
   res.json({ bookmarks: list });
 });
 
-// Testing bypass — skips Auth0 verification (dev only)
-app.post('/api/auth/bypass', (req, res) => {
-  const email = (req.body?.email || 'test@bypass.edu').trim().toLowerCase();
-  const addr = email && email.includes('@') ? email : 'test@bypass.edu';
-  saveLogin(addr);
-  res.cookie('user', addr, {
-    signed: true,
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    maxAge: 7 * 24 * 60 * 60 * 1000
+// Testing bypass — mints a session for any address with no verification at all.
+// Registered ONLY outside production so it can never exist on a deployed instance.
+if (process.env.NODE_ENV !== 'production') {
+  app.post('/api/auth/bypass', (req, res) => {
+    const email = (req.body?.email || 'test@bypass.edu').trim().toLowerCase();
+    const addr = email && email.includes('@') ? email : 'test@bypass.edu';
+    saveLogin(addr);
+    res.cookie('user', addr, {
+      signed: true,
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+    res.json({ success: true, redirect: '/dashboard.html' });
   });
-  res.json({ success: true, redirect: '/dashboard.html' });
-});
+  console.warn('[dev] POST /api/auth/bypass is enabled (NODE_ENV is not "production")');
+}
 
 // Proxy to College Football Data API
 app.get('/api/player/search', async (req, res) => {
